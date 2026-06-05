@@ -1,0 +1,22 @@
+<mat-card class="cardWithShadow">
+  <mat-card-content class="pt-4">
+    <mat-form-field class="w-full" appearance="outline">
+      <mat-label>Consulta en lenguaje natural</mat-label>
+      <textarea
+        matInput
+        [(ngModel)]="query"
+        rows="2"
+        placeholder="Ej: Comuna con más barrios">
+      </textarea>
+    </mat-form-field>
+    <div class="flex justify-end">
+      <button
+        mat-flat-button
+        color="primary"
+        [disabled]="loading || !query.trim()"
+        (click)="submit()">
+        Generar Reporte
+      </button>
+    </div>
+  </mat-card-content>
+</mat-card>

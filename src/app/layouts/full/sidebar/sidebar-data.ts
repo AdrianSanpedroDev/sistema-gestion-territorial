@@ -9,6 +9,11 @@ export const navItems: NavItem[] = [
     iconName: 'solar:atom-line-duotone',
     route: '/dashboard',
   },
+  {
+    displayName: 'Reportes',
+    iconName: 'solar:chart-2-line-duotone',
+    route: '/reports',
+  },
 
   {
     navCap: 'Ui Components',

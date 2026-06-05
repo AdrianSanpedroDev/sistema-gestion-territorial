@@ -16,6 +16,10 @@ import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { NgScrollbarModule } from 'ngx-scrollbar';
 import { AppSettings } from 'src/app/config';
+import { SecurityService } from 'src/app/services/security.service';
+import { User } from 'src/app/models/user';
+import { Subscription } from 'rxjs';
+import { NotificationService } from 'src/app/services/notification.service';
 
 interface notifications {
   id: number;
@@ -58,10 +62,44 @@ export class HeaderComponent {
     private settings: CoreService,
     private vsidenav: CoreService,
     public dialog: MatDialog,
-    private translate: TranslateService
+    private translate: TranslateService,
+    private securityService: SecurityService,
+    private notificationService: NotificationService,
   ) {
     translate.setDefaultLang('en');
   }
+
+  user: User | null = null;
+  private userSubscription?: Subscription;
+
+  ngOnInit(): void {
+    console.log('HeaderComponent ngOnInit: suscribiéndose a usuario actual...');
+    this.userSubscription = this.securityService
+      .getCurrentUser()
+      .subscribe((user) => {
+        console.log('👤 Usuario actual en HeaderComponent:', user);
+        this.user = user;
+      });
+      //WebSocket
+      console.log('HeaderComponent ngOnInit: suscribiéndose a notificaciones...');
+      this.notificationService
+      .onNewNotification("new_notification")
+      .subscribe((data: any) => {
+
+        console.log('Notificación recibida:', data);
+
+        this.notifications.push(data);
+      });
+  }
+  
+  
+  
+  
+
+  ngOnDestroy(): void {
+    this.userSubscription?.unsubscribe();
+  }
+  
 
   options = this.settings.getOptions();
 

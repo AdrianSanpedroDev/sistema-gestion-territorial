@@ -1,0 +1,104 @@
+@if (loading) {
+<div class="p-4">Cargando...</div>
+} @else {
+
+@if (!data || data.length === 0) {
+<div class="p-4 text-gray-600">Sin datos.</div>
+}
+
+@if (data && data.length > 0) {
+<div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200">
+
+        <thead class="bg-gray-50">
+            <tr>
+                @for (c of columns; track $index) {
+                <th [ngClass]="c.class" 
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {{ c.header }}
+                </th>
+                }
+
+                @if (actions && actions.length) {
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Acciones
+                </th>
+                }
+            </tr>
+        </thead>
+
+        <tbody class="bg-white divide-y divide-gray-200">
+            @for (row of data; track $index) {
+            <tr>
+                @for (c of columns; track $index) {
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {{ getValue(row, c.key) }}
+                </td>
+                }
+
+                @if (actions && actions.length) {
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    @for (a of actions; track $index) {
+                    <button type="button" (click)="onActionClick(a.id, row)"
+                        [ngClass]="a.class || 'mr-2 px-2 py-1 rounded bg-gray-100 hover:bg-gray-200'">
+                        @if (a.icon) {
+                        <!-- <ng-icon [name]="a.icon" class="inline-block w-4 h-4 mr-1 align-text-bottom"></ng-icon> -->
+                        }
+
+                        {{ a.label }}
+                    </button>
+                    }
+                </td>
+                }
+            </tr>
+            }
+        </tbody>
+
+    </table>
+</div>
+}
+
+<div class="flex items-center justify-end gap-4 border-t border-gray-200 px-6 py-4 text-sm text-gray-600">
+
+    <label class="flex items-center gap-2">
+        Items per page:
+
+        <select class="rounded-lg border border-gray-300 px-3 py-2" [value]="pageSize"
+            (change)="changePageSize(+$any($event.target).value)">
+            <option [value]="5">5</option>
+            <option [value]="10">10</option>
+            <option [value]="25">25</option>
+            <option [value]="50">50</option>
+        </select>
+    </label>
+
+    <span>
+        {{ fromItem }} - {{ toItem }} de {{ totalItems }}
+    </span>
+
+    <button type="button" class="rounded-lg px-3 py-2 hover:bg-gray-100 disabled:opacity-40"
+        [disabled]="page === 1 || loading" (click)="goToPage(1)">
+        «
+    </button>
+
+    <button type="button" class="rounded-lg px-3 py-2 hover:bg-gray-100 disabled:opacity-40"
+        [disabled]="page === 1 || loading" (click)="goToPage(page - 1)">
+        ‹
+    </button>
+
+    <button type="button" class="rounded-lg px-3 py-2 hover:bg-gray-100 disabled:opacity-40"
+        [disabled]="page === totalPages || loading" (click)="goToPage(page + 1)">
+        ›
+    </button>
+
+    <button type="button" class="rounded-lg px-3 py-2 hover:bg-gray-100 disabled:opacity-40"
+        [disabled]="page === totalPages || loading" (click)="goToPage(totalPages)">
+        »
+    </button>
+
+</div>
+}
+
+
+
+

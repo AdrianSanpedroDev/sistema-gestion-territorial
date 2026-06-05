@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { StarterComponent } from './starter/starter.component';
+import { AuthenticatedGuard } from '../guards/authenticated.guard';
 
 export const PagesRoutes: Routes = [
   {
@@ -12,5 +13,5 @@ export const PagesRoutes: Routes = [
         { title: 'Starter' },
       ],
     },
-  },
+  }
 ];

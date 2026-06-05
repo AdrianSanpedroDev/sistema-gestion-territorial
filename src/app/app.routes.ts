@@ -1,6 +1,8 @@
 import { Routes } from '@angular/router';
 import { BlankComponent } from './layouts/blank/blank.component';
 import { FullComponent } from './layouts/full/full.component';
+import { AuthenticatedGuard } from './guards/authenticated.guard';
+import { NoAuthenticatedGuard } from './guards/no-authenticated.guard';
 
 export const routes: Routes = [
   {
@@ -31,14 +33,24 @@ export const routes: Routes = [
       },
       {
         path: 'users',
-        loadChildren: () =>
-          import('./pages/users/users.routes').then((m) => m.UserRoutes),
+        canActivateChild: [AuthenticatedGuard],
+        children: [
+          {
+            path: '',
+            loadChildren: () =>import('./pages/users/users.routes').then((m) => m.UserRoutes)
+          }
+        ]
+      },
+      {
+        path: 'reports',
+        loadChildren: () => import('./pages/reports/reports.routes').then((m) => m.ReportsRoutes),
       }
     ],
   },
   {
     path: '',
     component: BlankComponent,
+    canActivateChild: [NoAuthenticatedGuard],
     children: [
       {
         path: 'authentication',

@@ -1,0 +1,7 @@
+<div class="p-6 flex flex-col gap-6">
+
+  <app-report-chat [loading]="loading" (querySubmit)="generateReport($event)" />
+
+  <app-bar-chart [reportData]="reportData" />
+
+</div>

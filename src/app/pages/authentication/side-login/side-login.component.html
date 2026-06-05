@@ -5,15 +5,15 @@
         <div class="w-full p-10 flex flex-col justify-center aling-center">
           <div class="text-center">Your Social Campaigns</div>
 
-          <form class="mt-8">
-            <mat-label class="mat-subtitle-2 text-sm font-semibold mb-3 block text-start">Username</mat-label>
+          <form class="mt-8" [formGroup]="form" (ngSubmit)="submit()">
+            <mat-label class="mat-subtitle-2 text-sm font-semibold mb-3 block text-start">Email</mat-label>
             <mat-form-field appearance="outline" class="w-full" color="primary">
-              <input matInput />
+              <input matInput formControlName="email" />
             </mat-form-field>
 
             <mat-label class="mat-subtitle-2 text-sm font-semibold mb-3 block text-start">Password</mat-label>
             <mat-form-field appearance="outline" class="w-full" color="primary">
-              <input matInput type="password" />
+              <input matInput formControlName="password" type="password" />
             </mat-form-field>
 
             <div class="flex items-center justify-between mb-3">
@@ -21,9 +21,22 @@
               <a [routerLink]="['/']" class="text-primary font-semibold no-underline text-sm">Forgot Password
                 ?</a>
             </div>
-            <a [routerLink]="['/']" mat-flat-button color="primary" class="w-full">
-              Sign In
-            </a>
+
+            @if (error) {
+              <div class="text-red-600 mt-2">{{ error }}</div>
+            }
+
+            @if (!loading) {
+              <button type="submit" mat-flat-button color="primary" class="w-full text-white" [disabled]="form.invalid">
+                Sign In
+              </button>
+            }
+
+            @if (loading) {
+              <button type="button" mat-flat-button color="primary" class="w-full text-white" disabled>
+                Signing in...
+              </button>
+            }
 
           </form>
           <span class="block font-medium text-center mt-6">New to Modernize?
@@ -40,3 +53,6 @@
     </div>
   </mat-card>
 </div>
+
+
+

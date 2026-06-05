@@ -1,1 +1,12 @@
-<p>list works!</p>
+<app-dynamic-table
+  [data]="users"
+  [columns]="columns"
+  [actions]="actions"
+  [loading]="loading"
+  [totalItems]="total"
+  [totalPages]="totalPages"
+  [page]="page"
+  [pageSize]="pageSize"
+  (pageChange)="onPageChange($event)"
+  (action)="onTableAction($event)">
+</app-dynamic-table>
