@@ -12,7 +12,7 @@ import {
   ApexGrid,
 } from 'ng-apexcharts';
 import { MaterialModule } from '../../../material.module';
-import { ReportResponse } from '../../../models/report';
+import { ChartSeries, ReportResponse } from '../../../models/report';
 
 export interface BarChartOptions {
   series: ApexAxisChartSeries;
@@ -45,7 +45,7 @@ export class BarChartComponent implements OnChanges {
 
   private buildChart(data: ReportResponse): void {
     this.chartOptions = {
-      series: data.series,
+      series: data.series as ChartSeries[],
       chart: {
         type: 'bar',
         height: 380,

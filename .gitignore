@@ -40,3 +40,10 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Claude Code — configuración personal
+.claude/
+
+# Contexto del proyecto (uso personal)
+CONTEXTO_PROYECTO.md
+mockups/

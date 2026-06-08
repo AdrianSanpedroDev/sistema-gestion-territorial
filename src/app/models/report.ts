@@ -9,6 +9,6 @@ export interface ChartSeries {
 
 export interface ReportResponse {
   labels: string[];
-  series: ChartSeries[];
+  series: number[] | ChartSeries[];
   type: string;
 }

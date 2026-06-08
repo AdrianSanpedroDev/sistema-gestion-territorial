@@ -3,6 +3,8 @@ import {
   Output,
   EventEmitter,
   Input,
+  OnInit,
+  OnDestroy,
   ViewEncapsulation,
 } from '@angular/core';
 import { CoreService } from 'src/app/services/core.service';
@@ -19,6 +21,7 @@ import { AppSettings } from 'src/app/config';
 import { SecurityService } from 'src/app/services/security.service';
 import { User } from 'src/app/models/user';
 import { Subscription } from 'rxjs';
+import { Router } from '@angular/router';
 import { NotificationService } from 'src/app/services/notification.service';
 
 interface notifications {
@@ -65,6 +68,7 @@ export class HeaderComponent {
     private translate: TranslateService,
     private securityService: SecurityService,
     private notificationService: NotificationService,
+    private router: Router,
   ) {
     translate.setDefaultLang('en');
   }
@@ -95,6 +99,12 @@ export class HeaderComponent {
   
   
   
+
+  logout(): void {
+    this.securityService.logout().subscribe(() => {
+      this.router.navigate(['/authentication/login']);
+    });
+  }
 
   ngOnDestroy(): void {
     this.userSubscription?.unsubscribe();
