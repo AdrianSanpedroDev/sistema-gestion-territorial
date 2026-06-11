@@ -43,6 +43,7 @@ Thumbs.db
 
 # Claude Code — configuración personal
 .claude/
+memory/
 
 # Contexto del proyecto (uso personal)
 CONTEXTO_PROYECTO.md

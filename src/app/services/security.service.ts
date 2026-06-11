@@ -1,101 +1,93 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
-import { User, UserRole } from '../models/user';
-import { StorageService } from './storage/storage.service';
+import { Injectable, inject } from '@angular/core';
+import { Auth, signInWithPopup, signOut, GoogleAuthProvider, GithubAuthProvider, onAuthStateChanged, User as FirebaseUser } from '@angular/fire/auth';
+import { Firestore, doc, getDoc, setDoc } from '@angular/fire/firestore';
+import { BehaviorSubject, Observable, from, throwError } from 'rxjs';
+import { User } from '../models/user';
 
-// Usuarios mock disponibles para desarrollo (el backend aún no tiene auth)
-const MOCK_USERS: Record<UserRole, User> = {
-  admin: { id: 1, name: 'Admin Mock', email: 'admin@mock.dev', role: 'admin' },
-  funcionario: { id: 2, name: 'Funcionario Mock', email: 'funcionario@mock.dev', role: 'funcionario' },
-  ciudadano: { id: 3, name: 'Ciudadano Mock', email: 'ciudadano@mock.dev', role: 'ciudadano' },
-};
-
-// Rol activo por defecto durante el desarrollo
-const DEFAULT_MOCK_ROLE: UserRole = 'admin';
+// CAPA: Acceso a Datos (Servicio)
+// POR QUÉ AQUÍ: Único lugar autorizado para hablar con Firebase Auth y Firestore.
+//               Si un componente usara Firebase directamente, violaría la separación de capas.
+// CONCEPTO ANGULAR: @Injectable providedIn root → singleton. BehaviorSubject → estado reactivo del usuario.
 
 @Injectable({
-  providedIn: 'root',
+  providedIn: 'root'
 })
 export class SecurityService {
+  // inject() es la forma moderna de inyectar dependencias en Angular (alternativa al constructor)
+  private auth = inject(Auth);
+  private firestore = inject(Firestore);
+
   private currentUserSubject = new BehaviorSubject<User | null>(null);
-  private readonly storageKey = 'currentUser';
 
-  constructor(private storage: StorageService) {
-    try {
-      const raw = this.storage.getItem(this.storageKey);
-      if (raw) {
-        const u: User = JSON.parse(raw);
-        this.currentUserSubject.next(u);
+  constructor() {
+    // onAuthStateChanged escucha en tiempo real si el usuario inicia o cierra sesión en Firebase.
+    // Se ejecuta automáticamente al arrancar la app, lo que permite restaurar la sesión
+    // si el usuario ya había iniciado sesión antes (Firebase guarda el token localmente).
+    onAuthStateChanged(this.auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const user = await this.getOrCreateUser(firebaseUser);
+        this.currentUserSubject.next(user);
+      } else {
+        this.currentUserSubject.next(null);
       }
-    } catch (e) {
-      console.warn('Failed to load user from localStorage', e);
-    }
+    });
   }
 
-  /**
-   * Mock: simula login sin llamar al backend.
-   * Acepta un campo `role` en el objeto user para elegir el perfil de prueba;
-   * si no viene, usa DEFAULT_MOCK_ROLE.
-   */
-  login(user: User): Observable<User> {
-    const role: UserRole = (user.role && MOCK_USERS[user.role]) ? user.role : DEFAULT_MOCK_ROLE;
-    const mockUser = MOCK_USERS[role];
-    this.setUser(mockUser);
-    console.log('🧪 [MOCK] Login como:', role, mockUser);
-    return of(mockUser);
+  loginWithGoogle(): Observable<User> {
+    const provider = new GoogleAuthProvider();
+    // from() convierte una Promise en un Observable para que los componentes
+    // puedan suscribirse con .subscribe() como con cualquier otro servicio Angular
+    return from(
+      signInWithPopup(this.auth, provider)
+        .then(result => this.getOrCreateUser(result.user))
+    );
   }
 
-  /** Mock: simula logout limpiando el usuario. */
-  logout(): Observable<null> {
-    this.clearUser();
-    console.log('🧪 [MOCK] Logout');
-    return of(null);
+  loginWithGithub(): Observable<User> {
+    const provider = new GithubAuthProvider();
+    return from(
+      signInWithPopup(this.auth, provider)
+        .then(result => this.getOrCreateUser(result.user))
+    );
   }
 
-  /**
-   * Mock: devuelve el usuario en memoria si hay sesión activa, o lanza error 401
-   * si no hay sesión. Esto permite que los guards funcionen correctamente:
-   * AuthenticatedGuard redirige a login, NoAuthenticatedGuard deja pasar.
-   */
+  logout(): Observable<void> {
+    return from(signOut(this.auth));
+  }
+
+  // Usado por los guards para verificar si hay sesión activa
   me(): Observable<User> {
     const current = this.currentUserSubject.getValue();
     if (current) {
-      return of(current);
+      return from(Promise.resolve(current));
     }
     return throwError(() => ({ status: 401, error: { message: 'No hay sesión activa' } }));
   }
 
-  /** Cambia el rol del mock en caliente (útil para desarrollo). */
-  setMockRole(role: UserRole): void {
-    this.setUser(MOCK_USERS[role]);
-    console.log('🧪 [MOCK] Rol cambiado a:', role);
-  }
-
-  public getCurrentUser(): Observable<User | null> {
+  getCurrentUser(): Observable<User | null> {
     return this.currentUserSubject.asObservable();
   }
 
-  setUser(user: User | null) {
-    this.currentUserSubject.next(user);
-    try {
-      if (user) {
-        const copy: any = { ...user };
-        if ('password' in copy) delete copy.password;
-        this.storage.setItem(this.storageKey, JSON.stringify(copy));
-      } else {
-        this.storage.removeItem(this.storageKey);
-      }
-    } catch (e) {
-      console.warn('Failed to persist user to storage', e);
-    }
-  }
+  // Consulta Firestore para obtener el rol del usuario.
+  // Si es la primera vez que inicia sesión, crea su documento con rol 'ciudadano'.
+  // El rol solo puede ser cambiado manualmente desde la consola de Firebase.
+  private async getOrCreateUser(firebaseUser: FirebaseUser): Promise<User> {
+    const userRef = doc(this.firestore, 'users', firebaseUser.uid);
+    const userSnap = await getDoc(userRef);
 
-  clearUser() {
-    this.currentUserSubject.next(null);
-    try {
-      this.storage.removeItem(this.storageKey);
-    } catch (e) {
-      console.warn('Failed to remove user from storage', e);
+    if (userSnap.exists()) {
+      return userSnap.data() as User;
     }
+
+    const newUser: User = {
+      uid: firebaseUser.uid,
+      name: firebaseUser.displayName ?? 'Usuario',
+      email: firebaseUser.email ?? '',
+      role: 'ciudadano',
+      photoURL: firebaseUser.photoURL ?? undefined,
+    };
+
+    await setDoc(userRef, newUser);
+    return newUser;
   }
 }

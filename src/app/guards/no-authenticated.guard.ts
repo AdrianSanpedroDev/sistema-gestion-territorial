@@ -6,7 +6,7 @@ import {
   RouterStateSnapshot
 } from '@angular/router';
 import { of } from 'rxjs';
-import { catchError, map, tap } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 import { SecurityService } from '../services/security.service';
 
 @Injectable({
@@ -19,20 +19,15 @@ export class NoAuthenticatedGuard implements CanActivateChild {
     private router: Router
   ) {}
 
-  canActivateChild(route: ActivatedRouteSnapshot, state: RouterStateSnapshot) {
-    console.log('🔓 [MOCK] Verificando NO autenticación para ruta:', state.url);
+  canActivateChild(_route: ActivatedRouteSnapshot, _state: RouterStateSnapshot) {
     return this.securityService.me().pipe(
-      tap((user) => this.securityService.setUser(user)),
       map((user) => {
         if (user) {
           return this.router.createUrlTree(['/dashboard']);
         }
         return true;
       }),
-      catchError(() => {
-        this.securityService.clearUser();
-        return of(true);
-      })
+      catchError(() => of(true))
     );
   }
 }
