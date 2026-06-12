@@ -11,7 +11,7 @@ import { environment } from '../../environments/environments';
 })
 export class CommuneService extends CrudService<Commune> {
   // Define el recurso para construir la URL base: {{baseUrl}}/api/communes
-  protected override resource = '/communes';
+  protected override resource = 'communes';
 
   private httpClient = inject(HttpClient);
   private apiBaseUrl = environment.apiUrl;
