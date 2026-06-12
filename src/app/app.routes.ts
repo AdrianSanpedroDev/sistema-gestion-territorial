@@ -8,6 +8,7 @@ export const routes: Routes = [
   {
     path: '',
     component: FullComponent,
+    canActivateChild: [AuthenticatedGuard],
     children: [
       {
         path: '',
@@ -21,7 +22,6 @@ export const routes: Routes = [
       },
       {
         path: 'users',
-        canActivateChild: [AuthenticatedGuard],
         children: [
           {
             path: '',

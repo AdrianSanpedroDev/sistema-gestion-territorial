@@ -100,6 +100,10 @@ export class HeaderComponent {
   
   
 
+  onAvatarError(event: Event): void {
+    (event.target as HTMLImageElement).src = '/assets/images/profile/user-1.jpg';
+  }
+
   logout(): void {
     this.securityService.logout().subscribe(() => {
       this.router.navigate(['/authentication/login']);
