@@ -101,4 +101,3 @@ export class DynamicTableComponent<T extends Record<string, any>> {
     return value ?? '';
   }
 }
-

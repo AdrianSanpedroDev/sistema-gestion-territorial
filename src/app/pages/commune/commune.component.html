@@ -1,1 +1,80 @@
-<p>commune works!</p>
+<div class="p-6">
+  <app-filter-bar 
+    title="Gestionar Comunas" 
+    addButtonLabel="Agregar Comuna" 
+    (addClicked)="openModal('create')">
+    
+    <div class="flex flex-col">
+      <label class="text-sm font-medium text-gray-700">Buscar</label>
+      <input type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm px-3 py-2 border focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Buscar comuna..." (input)="onSearch($event)">
+    </div>
+
+    <div class="flex flex-col">
+      <label class="text-sm font-medium text-gray-700">Departamento</label>
+      <select class="mt-1 block w-full rounded-md border-gray-300 shadow-sm px-3 py-2 border focus:ring-blue-500 focus:border-blue-500 sm:text-sm" (change)="onDepartmentFilterChange($event)">
+        <option value="">Todos</option>
+        <option *ngFor="let d of departments" [value]="d.id">{{ d.name }}</option>
+      </select>
+    </div>
+
+    <div class="flex flex-col">
+      <label class="text-sm font-medium text-gray-700">Ciudad</label>
+      <select class="mt-1 block w-full rounded-md border-gray-300 shadow-sm px-3 py-2 border focus:ring-blue-500 focus:border-blue-500 sm:text-sm" (change)="onCityFilterChange($event)">
+        <option value="">Todas las ciudades</option>
+        <option *ngFor="let c of cities" [value]="c.id">{{ c.name }}</option>
+      </select>
+    </div>
+  </app-filter-bar>
+
+  <app-dynamic-table 
+    [columns]="columns" 
+    [actions]="actions" 
+    [data]="communes" 
+    [page]="page" 
+    [pageSize]="pageSize" 
+    [totalItems]="totalItems" 
+    [loading]="loading"
+    (pageChange)="onPageChange($event)" 
+    (action)="handleAction($event)">
+  </app-dynamic-table>
+
+  <app-generic-modal 
+    [isOpen]="isModalOpen" 
+    [title]="modalMode === 'create' ? 'Agregar Nueva Comuna' : 'Editar Comuna'" 
+    [isSaveDisabled]="form.invalid || loading"
+    (closeModal)="closeModal()" 
+    (saveChanges)="saveCommune()">
+    
+    <form [formGroup]="form" class="space-y-4">
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Departamento</label>
+          <select formControlName="id_department" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm px-3 py-2 border focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+            <option value="">Seleccione</option>
+            <option *ngFor="let d of departments" [value]="d.id">{{ d.name }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Ciudad</label>
+          <select formControlName="id_city" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm px-3 py-2 border focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+            <option value="">Seleccione</option>
+            <option *ngFor="let c of cities" [value]="c.id">{{ c.name }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Nombre de la Comuna</label>
+        <input type="text" formControlName="name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm px-3 py-2 border focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Estado</label>
+        <select formControlName="status" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm px-3 py-2 border focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+          <option value="active">Activa</option>
+          <option value="inactive">Inactiva</option>
+        </select>
+      </div>
+    </form>
+  </app-generic-modal>
+</div>

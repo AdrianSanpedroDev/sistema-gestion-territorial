@@ -11,7 +11,7 @@ import { environment } from '../../environments/environments';
 })
 export class NeighborhoodService extends CrudService<Neighborhood> {
   // Define el recurso para construir la URL base: {{baseUrl}}/api/neighborhoods
-  protected override resource = 'api/neighborhoods';
+  protected override resource = '/neighborhoods';
 
   private httpClient = inject(HttpClient);
   private apiBaseUrl = environment.apiUrl;
