@@ -14,4 +14,14 @@ export const navItems: NavItem[] = [
     iconName: 'solar:chart-2-line-duotone',
     route: '/reports',
   },
+  {
+    displayName: 'Comunas',
+    iconName: 'solar:chart-2-line-duotone',
+    route: '/communes',
+  },
+  {
+    displayName: 'Barrios',
+    iconName: 'solar:chart-2-line-duotone',
+    route: '/neighborhoods',
+  },
 ];
