@@ -44,7 +44,11 @@ export const routes: Routes = [
       {
         path: 'citizens',
         loadChildren: () => import('./pages/citizen/citizen.routes').then((m) => m.CitizenRoutes),
-      },  
+      },
+      {
+        path: 'categories',
+        loadChildren: () => import('./pages/category/category.routes').then((m) => m.CategoryRoutes),
+      },
     ],
   },
   {

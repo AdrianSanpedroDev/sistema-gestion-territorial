@@ -1,0 +1,111 @@
+<div class="p-6">
+
+  <!-- BARRA DE FILTROS -->
+  <app-filter-bar
+    title="Gestionar Categorías"
+    addButtonLabel="Agregar Categoría"
+    (addClicked)="openModal('create')">
+
+    <div class="flex flex-col">
+      <label class="text-sm font-medium text-gray-700">Buscar</label>
+      <input
+        type="text"
+        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm px-3 py-2 border focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+        placeholder="Buscar por nombre..."
+        (input)="onSearch($event)">
+    </div>
+
+  </app-filter-bar>
+
+  <!-- TABLA -->
+  <app-dynamic-table
+    [columns]="columns"
+    [actions]="actions"
+    [data]="categories"
+    [page]="page"
+    [pageSize]="pageSize"
+    [totalItems]="totalItems"
+    [loading]="loading"
+    (pageChange)="onPageChange($event)"
+    (action)="handleAction($event)">
+  </app-dynamic-table>
+
+  <!-- MODAL CREAR / EDITAR -->
+  <app-generic-modal
+    [isOpen]="isModalOpen"
+    [title]="modalMode === 'create' ? 'Agregar Categoría' : 'Editar Categoría'"
+    [isSaveDisabled]="form.invalid || loading"
+    (closeModal)="closeModal()"
+    (saveChanges)="saveCategory()">
+
+    <form [formGroup]="form" class="space-y-4">
+
+      <!-- Categoría padre -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Categoría padre</label>
+        <select
+          formControlName="id_parent_category"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm px-3 py-2 border focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+          <option [ngValue]="null">Sin categoría padre</option>
+          <option
+            *ngFor="let cat of availableParentCategories"
+            [ngValue]="cat.id_category">
+            {{ cat.name }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Nombre -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Nombre</label>
+        <input
+          type="text"
+          formControlName="name"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm px-3 py-2 border focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+        <div *ngIf="form.get('name')?.invalid && form.get('name')?.touched" class="mt-1 text-sm text-red-600">
+          <span *ngIf="form.get('name')?.errors?.['required']">El nombre es obligatorio.</span>
+          <span *ngIf="form.get('name')?.errors?.['minlength']">Mínimo 3 caracteres.</span>
+          <span *ngIf="form.get('name')?.errors?.['maxlength']">Máximo 100 caracteres.</span>
+        </div>
+      </div>
+
+      <!-- Descripción -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Descripción</label>
+        <textarea
+          formControlName="description"
+          rows="3"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm px-3 py-2 border focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+        </textarea>
+        <div *ngIf="form.get('description')?.invalid && form.get('description')?.touched" class="mt-1 text-sm text-red-600">
+          <span *ngIf="form.get('description')?.errors?.['required']">La descripción es obligatoria.</span>
+          <span *ngIf="form.get('description')?.errors?.['maxlength']">Máximo 500 caracteres.</span>
+        </div>
+      </div>
+
+      <!-- URL de imagen -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700">URL de imagen</label>
+        <input
+          type="text"
+          formControlName="image_url"
+          placeholder="https://..."
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm px-3 py-2 border focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+      </div>
+
+      <!-- Estado -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Estado</label>
+        <select
+          formControlName="status"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm px-3 py-2 border focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+          <option value="active">Activo</option>
+          <option value="inactive">Inactivo</option>
+        </select>
+      </div>
+
+    </form>
+  </app-generic-modal>
+
+</div>
+
