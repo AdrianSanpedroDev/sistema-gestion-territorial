@@ -1,7 +1,7 @@
 # Estado del Proyecto — Sistema de Gestión Territorial
 
 > Documento de seguimiento del equipo frontend. Se actualiza a medida que se completan casos de uso.
-> Última actualización: 2026-06-12 — CU-05 y CU-06 (Comunas y Barrios) implementados por Nico
+> Última actualización: 2026-06-12 — CU-03 (Ciudadanos) implementado por Adrián
 
 ---
 
@@ -13,7 +13,7 @@
 | Autenticación | CU-08 | Logout | ✅ Completado | Adrián |
 | Administración | CU-01 | Gestión de Entidades | ⬜ Pendiente | — |
 | Administración | CU-02 | Gestión de Funcionarios | ⬜ Pendiente | — |
-| Administración | CU-03 | Gestión de Ciudadanos | ⬜ Pendiente | Adrián |
+| Administración | CU-03 | Gestión de Ciudadanos | ✅ Completado | Adrián |
 | Administración | CU-04 | Gestión de Categorías | ⬜ Pendiente | Adrián |
 | Administración | CU-05 | Gestión de Comunas | ✅ Completado | Nico |
 | Administración | CU-06 | Gestión de Barrios | ✅ Completado | Nico |
@@ -36,6 +36,8 @@
 - `SecurityService` conectado a Firebase Auth
 - Roles almacenados en Firestore (primer login crea usuario con rol `ciudadano`)
 - Guards `AuthenticatedGuard` y `NoAuthenticatedGuard` actualizados
+- **Pendiente:** login con Facebook (requiere app aprobada en Meta Developer Console)
+- **Pendiente:** login con correo y contraseña (requiere habilitar el proveedor Email/Password en Firebase Auth)
 
 ### ✅ CU-08 — Logout
 - Botón "Logout" en el menú desplegable del header
@@ -60,6 +62,14 @@
 - Ruta `/neighborhoods` registrada y entrada añadida al sidebar
 - **Pendiente:** mismo problema con mocks de filtros; relación con Comunas depende de que CU-05 tenga datos reales
 
+### ✅ CU-03 — Gestión de Ciudadanos _(Adrián, 2026-06-12)_
+- Modelo `Citizen` con DTOs: `CitizenRequestDto`, `CitizenSearchRequestDto`, `CitizenPaginatedResponseDto`, `CitizenResponseMessageDto`
+- `CitizenService` extiende `CrudService<Citizen>`: métodos `createCitizen`, `updateCitizen`, `searchByFilter` (búsqueda por nombre vía `?q=`)
+- Página `CitizenComponent` con CRUD completo: tabla paginada, búsqueda por texto, modal crear/editar, confirmación de eliminación con SweetAlert2
+- Validaciones en todos los campos: `name` (letras/espacios, 3-100 chars), `email` (formato), `phone` (solo dígitos, 7-15 chars), `address` (máx 200 chars)
+- Ruta `/citizens` registrada en `app.routes.ts` y entrada añadida al sidebar
+- **Nota:** el parámetro de búsqueda del backend es `q` (no `search`) — confirmado con el equipo backend
+
 ---
 
 ### Infraestructura CRUD (base para CU-01 al CU-06)
@@ -80,9 +90,9 @@
 | `CrudService<T>` genérico | ✅ | `src/app/services/crud.service.ts` — base para CU-01 al CU-06 |
 | `PagedResponse<T>` | ✅ | `src/app/models/paged-response.ts` |
 | Endpoints backend confirmados | ✅ | entities, officials, citizens, categories, communes, neighborhoods |
-| Modelos territoriales (`models/`) | 🔄 | `commune.ts` y `neighborhood.ts` ✅ — ciudadanos y categorías pendientes |
-| Servicios por recurso | 🔄 | `CommuneService` y `NeighborhoodService` ✅ — resto pendiente |
-| Sidebar actualizado con módulos | 🔄 | Comunas y Barrios ✅ — resto pendiente |
+| Modelos territoriales (`models/`) | 🔄 | `commune.ts`, `neighborhood.ts`, `citizen.ts` ✅ — categorías pendiente |
+| Servicios por recurso | 🔄 | `CommuneService`, `NeighborhoodService`, `CitizenService` ✅ — resto pendiente |
+| Sidebar actualizado con módulos | 🔄 | Comunas, Barrios y Ciudadanos ✅ — resto pendiente |
 | Leaflet instalado (mapas) | ⬜ | Necesario para CU-09/10/11/12/14 |
 
 ---
