@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { CrudService } from './crud.service';
-import { Official } from '../models/official';
+import { Official, OfficialRequestDto } from '../models/official';
 import { PagedResponse } from '../models/paged-response';
 import { environment } from '../../environments/environments';
 
@@ -15,12 +15,12 @@ export class OfficialService extends CrudService<Official> {
   private httpClient = inject(HttpClient);
   private apiBaseUrl = environment.apiUrl;
 
-  createOfficial(officialData: Omit<Official, 'id_official' | 'last_gps_update' | 'last_latitude' | 'last_longitude'>): Observable<Official> {
-    return this.httpClient.post<Official>(`${this.apiBaseUrl}/${this.resource}`, officialData);
+  createOfficial(data: OfficialRequestDto): Observable<Official> {
+    return this.httpClient.post<Official>(`${this.apiBaseUrl}/${this.resource}`, data);
   }
 
-  updateOfficial(idOfficial: number, officialData: Omit<Official, 'id_official' | 'last_gps_update' | 'last_latitude' | 'last_longitude'>): Observable<Official> {
-    return this.httpClient.put<Official>(`${this.apiBaseUrl}/${this.resource}/${idOfficial}`, officialData);
+  updateOfficial(id: number, data: OfficialRequestDto): Observable<Official> {
+    return this.httpClient.put<Official>(`${this.apiBaseUrl}/${this.resource}/${id}`, data);
   }
 
   searchByFilter(query: string, page: number, pageSize: number): Observable<PagedResponse<Official>> {

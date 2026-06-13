@@ -1,8 +1,6 @@
 export interface Entity {
   id_entity: number;
   name: string;
-  description: string;
-  type: 'public' | 'private';
   nit: string;
   email: string;
   phone: string;
@@ -15,8 +13,6 @@ export interface Entity {
 
 export interface EntityRequestDto {
   name: string;
-  description: string;
-  type: 'public' | 'private';
   nit: string;
   email: string;
   phone: string;

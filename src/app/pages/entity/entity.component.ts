@@ -31,7 +31,6 @@ export class EntityComponent implements OnInit {
   columns: ColumnDef[] = [
     { key: 'logo_url', header: 'Logo', type: 'image' },
     { key: 'name', header: 'Nombre' },
-    { key: 'type', header: 'Tipo' },
     { key: 'nit', header: 'NIT' },
     { key: 'email', header: 'Correo' },
     { key: 'phone', header: 'Teléfono' },
@@ -57,12 +56,11 @@ export class EntityComponent implements OnInit {
 
   initForm() {
     this.form = this.fb.group({
-      name: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
-      description: ['', [Validators.required, Validators.maxLength(500)]],
-      type: ['public', Validators.required],
-      nit: ['', [Validators.required, Validators.maxLength(30)]],
-      email: ['', [Validators.required, Validators.email]],
-      phone: ['', [Validators.required, Validators.maxLength(30)]],
+      name: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100),
+                  Validators.pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s\-\.]+$/)]],
+      nit: ['', [Validators.required, Validators.maxLength(30), Validators.pattern(/^[0-9\-]+$/)]],
+      email: ['', [Validators.required, Validators.email, Validators.maxLength(150)]],
+      phone: ['', [Validators.required, Validators.pattern(/^\d{7,15}$/)]],
       address: ['', [Validators.required, Validators.maxLength(200)]],
       status: ['active', Validators.required]
     });
@@ -114,12 +112,10 @@ export class EntityComponent implements OnInit {
     this.isModalOpen = true;
     if (mode === 'edit' && entity) {
       this.currentEntityId = entity.id_entity;
-      this.previewUrl = entity.logo_url ? `${entity.logo_url}` : null;
+      this.previewUrl = entity.logo_url ?? null;
       this.selectedFile = null;
       this.form.patchValue({
         name: entity.name,
-        description: entity.description,
-        type: entity.type,
         nit: entity.nit,
         email: entity.email,
         phone: entity.phone,
@@ -130,7 +126,7 @@ export class EntityComponent implements OnInit {
       this.currentEntityId = null;
       this.selectedFile = null;
       this.previewUrl = null;
-      this.form.reset({ type: 'public', status: 'active' });
+      this.form.reset({ status: 'active' });
     }
   }
 
@@ -143,9 +139,9 @@ export class EntityComponent implements OnInit {
 
   closeModal() {
     this.isModalOpen = false;
-    this.form.reset({ type: 'public', status: 'active' });
     this.selectedFile = null;
     this.previewUrl = null;
+    this.form.reset({ status: 'active' });
   }
 
   saveEntity() {
@@ -154,8 +150,6 @@ export class EntityComponent implements OnInit {
 
     const formData = new FormData();
     formData.append('name', this.form.get('name')!.value);
-    formData.append('description', this.form.get('description')!.value);
-    formData.append('type', this.form.get('type')!.value);
     formData.append('nit', this.form.get('nit')!.value);
     formData.append('email', this.form.get('email')!.value);
     formData.append('phone', this.form.get('phone')!.value);
@@ -175,8 +169,8 @@ export class EntityComponent implements OnInit {
         this.closeModal();
         this.loadData();
       },
-      error: () => {
-        Swal.fire('Error', 'Ocurrió un error al guardar la entidad', 'error');
+      error: (err) => {
+        Swal.fire('Error', err?.error?.message || 'Ocurrió un error al guardar la entidad', 'error');
         this.loading = false;
       }
     });
@@ -200,8 +194,8 @@ export class EntityComponent implements OnInit {
             Swal.fire('Eliminado', 'La entidad fue eliminada correctamente.', 'success');
             this.loadData();
           },
-          error: () => {
-            Swal.fire('Error', 'No se puede eliminar esta entidad. Verifique dependencias.', 'error');
+          error: (err) => {
+            Swal.fire('Error', err?.error?.message || 'No se puede eliminar esta entidad. Verifique dependencias.', 'error');
             this.loading = false;
           }
         });

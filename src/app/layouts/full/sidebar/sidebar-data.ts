@@ -36,7 +36,7 @@ export const navItems: NavItem[] = [
   },
   {
     displayName: 'Entidades',
-    iconName: 'solar:building-4-line-duotone',
+    iconName: 'solar:buildings-line-duotone',
     route: '/entities',
   },
   {

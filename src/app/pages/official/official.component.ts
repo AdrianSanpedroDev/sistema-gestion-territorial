@@ -59,9 +59,10 @@ export class OfficialComponent implements OnInit {
   initForm() {
     this.form = this.fb.group({
       id_entity: [null, Validators.required],
-      name: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
-      email: ['', [Validators.required, Validators.email]],
-      phone: ['', [Validators.required, Validators.maxLength(30)]],
+      name: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100),
+                  Validators.pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/)]],
+      email: ['', [Validators.required, Validators.email, Validators.maxLength(150)]],
+      phone: ['', [Validators.required, Validators.pattern(/^\d{7,15}$/)]],
       role: ['', [Validators.required, Validators.maxLength(50)]],
       status: ['active', Validators.required],
       gps_active: [true]
@@ -94,7 +95,7 @@ export class OfficialComponent implements OnInit {
         const items: Official[] = response.items || response.data || response.content || (Array.isArray(response) ? response : []);
         this.officials = items.map((official) => ({
           ...official,
-          entityName: this.entities.find((entity) => entity.id_entity === official.id_entity)?.name ?? String(official.id_entity)
+          entityName: this.entities.find((e) => e.id_entity === official.id_entity)?.name ?? String(official.id_entity)
         }));
         this.totalItems = response.totalItems || response.total || response.totalElements || this.officials.length;
         this.loading = false;
@@ -156,7 +157,7 @@ export class OfficialComponent implements OnInit {
     if (this.form.invalid) return;
     this.loading = true;
 
-    const officialDto: OfficialRequestDto = {
+    const dto: OfficialRequestDto = {
       id_entity: this.form.get('id_entity')!.value,
       name: this.form.get('name')!.value,
       email: this.form.get('email')!.value,
@@ -167,8 +168,8 @@ export class OfficialComponent implements OnInit {
     };
 
     const request$ = this.modalMode === 'create'
-      ? this.officialService.createOfficial(officialDto)
-      : this.officialService.updateOfficial(this.currentOfficialId!, officialDto);
+      ? this.officialService.createOfficial(dto)
+      : this.officialService.updateOfficial(this.currentOfficialId!, dto);
 
     request$.subscribe({
       next: () => {
@@ -176,8 +177,8 @@ export class OfficialComponent implements OnInit {
         this.closeModal();
         this.loadData();
       },
-      error: () => {
-        Swal.fire('Error', 'Ocurrió un error al guardar el funcionario', 'error');
+      error: (err) => {
+        Swal.fire('Error', err?.error?.message || 'Ocurrió un error al guardar el funcionario', 'error');
         this.loading = false;
       }
     });
@@ -186,7 +187,7 @@ export class OfficialComponent implements OnInit {
   confirmDelete(official: Official) {
     Swal.fire({
       title: '¿Eliminar funcionario?',
-      text: `Eliminarás: ${official.name}`,
+      text: `Eliminarás a: ${official.name}`,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#d33',
@@ -201,8 +202,8 @@ export class OfficialComponent implements OnInit {
             Swal.fire('Eliminado', 'El funcionario fue eliminado correctamente.', 'success');
             this.loadData();
           },
-          error: () => {
-            Swal.fire('Error', 'No se puede eliminar este funcionario. Verifica dependencias.', 'error');
+          error: (err) => {
+            Swal.fire('Error', err?.error?.message || 'No se puede eliminar este funcionario. Verifica dependencias.', 'error');
             this.loading = false;
           }
         });
