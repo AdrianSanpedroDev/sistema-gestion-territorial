@@ -1,1 +1,150 @@
-<p>entity works!</p>
+<div class="p-6">
+  <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-6">
+    <div>
+      <p class="text-sm font-medium text-slate-500">Administración</p>
+      <h1 class="text-3xl font-semibold text-slate-900">Entidades registradas</h1>
+      <p class="mt-2 text-sm text-slate-600">Consulta, edita o elimina las entidades del sistema.</p>
+    </div>
+    <button type="button" (click)="openModal('create')"
+      class="inline-flex items-center gap-2 rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm shadow-blue-200 transition hover:bg-blue-700">
+      + Nueva entidad
+    </button>
+  </div>
+
+  <div class="grid gap-6 xl:grid-cols-[1.8fr_1fr]">
+    <section class="space-y-4">
+      <app-filter-bar
+        title="Entidades"
+        addButtonLabel="Nueva entidad"
+        (addClicked)="openModal('create')">
+
+        <div class="flex flex-col w-full">
+          <label class="text-sm font-medium text-gray-700">Buscar</label>
+          <input
+            type="text"
+            class="mt-1 block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            placeholder="Buscar por nombre, NIT o correo..."
+            (input)="onSearch($event)">
+        </div>
+      </app-filter-bar>
+
+      <div class="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-sm">
+        <app-dynamic-table
+          [columns]="columns"
+          [actions]="actions"
+          [data]="entities"
+          [page]="page"
+          [pageSize]="pageSize"
+          [totalItems]="totalItems"
+          [loading]="loading"
+          (pageChange)="onPageChange($event)"
+          (action)="handleAction($event)">
+        </app-dynamic-table>
+      </div>
+    </section>
+
+    <aside class="space-y-4">
+      <div class="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <p class="text-sm font-medium text-slate-500">Formulario</p>
+            <h2 class="mt-2 text-xl font-semibold text-slate-900">{{ modalMode === 'create' ? 'Nueva entidad' : 'Editar entidad' }}</h2>
+          </div>
+          <button type="button" (click)="closeModal()"
+            class="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50">
+            Cerrar
+          </button>
+        </div>
+
+        <p class="mt-4 text-sm text-slate-600">Completa la información de la entidad para registrarla en el sistema.</p>
+
+        <form [formGroup]="form" class="mt-6 space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700">Logo de la entidad</label>
+            <div class="mt-2 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-4 text-center">
+              <input type="file" accept="image/*" (change)="onFileSelected($event)"
+                class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-blue-600 file:text-white hover:file:bg-blue-700" />
+              <p class="mt-3 text-sm text-slate-500">Arrastra y suelta la imagen aquí o haz clic para seleccionar. Formatos JPG, PNG. Máx. 2MB.</p>
+            </div>
+            <div *ngIf="previewUrl" class="mt-4 flex items-center justify-center">
+              <img [src]="previewUrl" class="h-28 w-28 rounded-3xl object-cover border border-slate-200" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700">Nombre de la entidad</label>
+            <input type="text" formControlName="name"
+              class="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700">Descripción</label>
+            <textarea formControlName="description" rows="4"
+              class="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"></textarea>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label class="block text-sm font-medium text-slate-700">Tipo de entidad</label>
+              <select formControlName="type"
+                class="mt-2 block w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                <option value="public">Entidad Pública</option>
+                <option value="private">Entidad Privada</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700">NIT</label>
+              <input type="text" formControlName="nit"
+                class="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label class="block text-sm font-medium text-slate-700">Teléfono</label>
+              <input type="text" formControlName="phone"
+                class="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700">Correo electrónico</label>
+              <input type="email" formControlName="email"
+                class="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700">Dirección</label>
+            <input type="text" formControlName="address"
+              class="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
+          </div>
+
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label class="block text-sm font-medium text-slate-700">Estado</label>
+              <select formControlName="status"
+                class="mt-2 block w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                <option value="active">Activa</option>
+                <option value="inactive">Inactiva</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mt-6 flex items-center justify-end gap-3">
+            <button type="button" (click)="closeModal()"
+              class="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+              Cancelar
+            </button>
+            <button type="button" (click)="saveEntity()" [disabled]="form.invalid || loading"
+              class="rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">
+              {{ modalMode === 'create' ? 'Guardar entidad' : 'Actualizar entidad' }}
+            </button>
+          </div>
+        </form>
+      </div>
+      <div *ngIf="!isModalOpen" class="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
+        <h3 class="text-lg font-semibold text-slate-900">Vista rápida</h3>
+        <p class="mt-3 text-sm text-slate-600">Haz clic en "Nueva entidad" o selecciona una fila para editar una entidad existente.</p>
+      </div>
+    </aside>
+  </div>
+</div>

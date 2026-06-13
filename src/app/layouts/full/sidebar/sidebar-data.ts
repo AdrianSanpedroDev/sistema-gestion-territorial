@@ -34,5 +34,15 @@ export const navItems: NavItem[] = [
     iconName: 'solar:tag-line-duotone',
     route: '/categories',
   },
+  {
+    displayName: 'Entidades',
+    iconName: 'solar:building-4-line-duotone',
+    route: '/entities',
+  },
+  {
+    displayName: 'Funcionarios',
+    iconName: 'solar:user-circle-line-duotone',
+    route: '/officials',
+  },
 
 ];

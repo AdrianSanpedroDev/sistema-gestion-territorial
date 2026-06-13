@@ -49,6 +49,14 @@ export const routes: Routes = [
         path: 'categories',
         loadChildren: () => import('./pages/category/category.routes').then((m) => m.CategoryRoutes),
       },
+      {
+        path: 'entities',
+        loadChildren: () => import('./pages/entity/entity.routes').then((m) => m.EntityRoutes),
+      },
+      {
+        path: 'officials',
+        loadChildren: () => import('./pages/official/official.routes').then((m) => m.OfficialRoutes),
+      },
     ],
   },
   {

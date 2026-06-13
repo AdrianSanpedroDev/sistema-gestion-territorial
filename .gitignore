@@ -48,3 +48,6 @@ memory/
 # Contexto del proyecto (uso personal)
 CONTEXTO_PROYECTO.md
 mockups/
+
+venv/
+.venv/
