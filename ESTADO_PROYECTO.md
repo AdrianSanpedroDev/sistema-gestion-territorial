@@ -1,7 +1,7 @@
 # Estado del Proyecto — Sistema de Gestión Territorial
 
 > Documento de seguimiento del equipo frontend. Se actualiza a medida que se completan casos de uso.
-> Última actualización: 2026-06-11 — CU-08 completado
+> Última actualización: 2026-06-12 — CU-05 y CU-06 (Comunas y Barrios) implementados por Nico
 
 ---
 
@@ -13,10 +13,10 @@
 | Autenticación | CU-08 | Logout | ✅ Completado | Adrián |
 | Administración | CU-01 | Gestión de Entidades | ⬜ Pendiente | — |
 | Administración | CU-02 | Gestión de Funcionarios | ⬜ Pendiente | — |
-| Administración | CU-03 | Gestión de Ciudadanos | ⬜ Pendiente | — |
-| Administración | CU-04 | Gestión de Categorías | ⬜ Pendiente | — |
-| Administración | CU-05 | Gestión de Comunas | ⬜ Pendiente | — |
-| Administración | CU-06 | Gestión de Barrios | ⬜ Pendiente | — |
+| Administración | CU-03 | Gestión de Ciudadanos | ⬜ Pendiente | Adrián |
+| Administración | CU-04 | Gestión de Categorías | ⬜ Pendiente | Adrián |
+| Administración | CU-05 | Gestión de Comunas | ✅ Completado | Nico |
+| Administración | CU-06 | Gestión de Barrios | ✅ Completado | Nico |
 | Mapa | CU-09 | Demarcar polígono de barrio | ⬜ Pendiente | — |
 | Mapa | CU-10 | Editar polígono | ⬜ Pendiente | — |
 | Mapa | CU-11 | Tracking en tiempo real | ⬜ Pendiente | — |
@@ -45,6 +45,31 @@
 
 ---
 
+### ✅ CU-05 — Gestión de Comunas _(Nico, 2026-06-12)_
+- Modelo `Commune` con DTOs: `CommuneRequestDto`, `CommuneSearchRequestDto`, `CommunePaginatedResponseDto`
+- `CommuneService` extiende `CrudService<Commune>`: métodos `createCommune`, `updateCommune`, `searchByFilter` (filtro por ciudad paginado)
+- Página `CommunesComponent` con CRUD completo: tabla paginada, filtros por departamento/ciudad, modal de crear/editar, confirmación de eliminación con SweetAlert2
+- Componentes reutilizables nuevos: `FilterBarComponent`, `GenericModalComponent`
+- Ruta `/communes` registrada en `app.routes.ts` y entrada añadida al sidebar
+- **Pendiente:** los selectores de departamento y ciudad usan mocks hardcodeados — deben reemplazarse con datos reales del backend cuando estén los servicios de ciudades/departamentos
+
+### ✅ CU-06 — Gestión de Barrios _(Nico, 2026-06-12)_
+- Modelo `Neighborhood` con DTOs análogos al de Comunas
+- `NeighborhoodService` extiende `CrudService<Neighborhood>` con búsqueda filtrada por comuna
+- Página `NeighborhoodComponent` con CRUD completo, misma estructura que Comunas
+- Ruta `/neighborhoods` registrada y entrada añadida al sidebar
+- **Pendiente:** mismo problema con mocks de filtros; relación con Comunas depende de que CU-05 tenga datos reales
+
+---
+
+### Infraestructura CRUD (base para CU-01 al CU-06)
+- `CrudService<T>` abstracto en `src/app/services/crud.service.ts`
+- `PagedResponse<T>` en `src/app/models/paged-response.ts`
+- Endpoints backend confirmados: `entities`, `officials`, `citizens`, `categories`, `communes`, `neighborhoods`
+- Repartición: Adrián → CU-03 y CU-04 · Compañeros → CU-01/02 y CU-05/06
+
+---
+
 ## Infraestructura base
 
 | Pieza | Estado | Notas |
@@ -52,10 +77,12 @@
 | Firebase Auth (Google + GitHub) | ✅ | Microsoft bloqueado por restricciones de Azure en cuentas personales |
 | Firestore (roles de usuario) | ✅ | Modo prueba |
 | `SecurityService` con Firebase | ✅ | Reemplaza el mock anterior |
-| `CrudService<T>` genérico | ⬜ | Pendiente — base para todos los CRUD admin |
-| Modelos territoriales (`models/territorial/`) | ⬜ | Pendiente |
-| Servicios por recurso | ⬜ | Pendiente |
-| Sidebar actualizado con módulos | ⬜ | Pendiente |
+| `CrudService<T>` genérico | ✅ | `src/app/services/crud.service.ts` — base para CU-01 al CU-06 |
+| `PagedResponse<T>` | ✅ | `src/app/models/paged-response.ts` |
+| Endpoints backend confirmados | ✅ | entities, officials, citizens, categories, communes, neighborhoods |
+| Modelos territoriales (`models/`) | 🔄 | `commune.ts` y `neighborhood.ts` ✅ — ciudadanos y categorías pendientes |
+| Servicios por recurso | 🔄 | `CommuneService` y `NeighborhoodService` ✅ — resto pendiente |
+| Sidebar actualizado con módulos | 🔄 | Comunas y Barrios ✅ — resto pendiente |
 | Leaflet instalado (mapas) | ⬜ | Necesario para CU-09/10/11/12/14 |
 
 ---

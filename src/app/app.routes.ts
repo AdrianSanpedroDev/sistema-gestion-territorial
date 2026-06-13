@@ -40,7 +40,11 @@ export const routes: Routes = [
       {
         path: 'reports',
         loadChildren: () => import('./pages/reports/reports.routes').then((m) => m.ReportsRoutes),
-      }
+      },
+      {
+        path: 'citizens',
+        loadChildren: () => import('./pages/citizen/citizen.routes').then((m) => m.CitizenRoutes),
+      },  
     ],
   },
   {

@@ -24,4 +24,10 @@ export const navItems: NavItem[] = [
     iconName: 'solar:chart-2-line-duotone',
     route: '/neighborhoods',
   },
+  {
+    displayName: 'Ciudadanos',
+    iconName: 'solar:users-group-rounded-line-duotone',
+    route: '/citizens',
+  },
+
 ];

@@ -1,0 +1,114 @@
+<div class="p-6">
+
+  <!-- BARRA DE FILTROS -->
+  <app-filter-bar
+    title="Gestionar Ciudadanos"
+    addButtonLabel="Agregar Ciudadano"
+    (addClicked)="openModal('create')">
+
+    <div class="flex flex-col">
+      <label class="text-sm font-medium text-gray-700">Buscar</label>
+      <input
+        type="text"
+        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm px-3 py-2 border focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+        placeholder="Buscar por nombre o correo..."
+        (input)="onSearch($event)">
+    </div>
+
+  </app-filter-bar>
+
+  <!-- TABLA -->
+  <app-dynamic-table
+    [columns]="columns"
+    [actions]="actions"
+    [data]="citizens"
+    [page]="page"
+    [pageSize]="pageSize"
+    [totalItems]="totalItems"
+    [loading]="loading"
+    (pageChange)="onPageChange($event)"
+    (action)="handleAction($event)">
+  </app-dynamic-table>
+
+  <!-- MODAL CREAR / EDITAR -->
+  <app-generic-modal
+    [isOpen]="isModalOpen"
+    [title]="modalMode === 'create' ? 'Agregar Ciudadano' : 'Editar Ciudadano'"
+    [isSaveDisabled]="form.invalid || loading"
+    (closeModal)="closeModal()"
+    (saveChanges)="saveCitizen()">
+
+    <form [formGroup]="form" class="space-y-4">
+
+      <!-- Nombre -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Nombre</label>
+        <input
+          type="text"
+          formControlName="name"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm px-3 py-2 border focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+        <div *ngIf="form.get('name')?.invalid && form.get('name')?.touched" class="mt-1 text-sm text-red-600">
+          <span *ngIf="form.get('name')?.errors?.['required']">El nombre es obligatorio.</span>
+          <span *ngIf="form.get('name')?.errors?.['minlength']">Mínimo 3 caracteres.</span>
+          <span *ngIf="form.get('name')?.errors?.['maxlength']">Máximo 100 caracteres.</span>
+          <span *ngIf="form.get('name')?.errors?.['pattern']">Solo se permiten letras y espacios.</span>
+        </div>
+      </div>
+
+      <!-- Correo -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Correo electrónico</label>
+        <input
+          type="email"
+          formControlName="email"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm px-3 py-2 border focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+        <div *ngIf="form.get('email')?.invalid && form.get('email')?.touched" class="mt-1 text-sm text-red-600">
+          <span *ngIf="form.get('email')?.errors?.['required']">El correo es obligatorio.</span>
+          <span *ngIf="form.get('email')?.errors?.['email']">Ingresa un correo válido.</span>
+          <span *ngIf="form.get('email')?.errors?.['maxlength']">Máximo 150 caracteres.</span>
+        </div>
+      </div>
+
+      <!-- Teléfono -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Teléfono</label>
+        <input
+          type="text"
+          formControlName="phone"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm px-3 py-2 border focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+          placeholder="Ej: 3001234567">
+        <div *ngIf="form.get('phone')?.invalid && form.get('phone')?.touched" class="mt-1 text-sm text-red-600">
+          <span *ngIf="form.get('phone')?.errors?.['required']">El teléfono es obligatorio.</span>
+          <span *ngIf="form.get('phone')?.errors?.['pattern']">Solo dígitos, entre 7 y 15 caracteres.</span>
+        </div>
+      </div>
+
+      <!-- Dirección -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Dirección</label>
+        <input
+          type="text"
+          formControlName="address"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm px-3 py-2 border focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+        <div *ngIf="form.get('address')?.invalid && form.get('address')?.touched" class="mt-1 text-sm text-red-600">
+          <span *ngIf="form.get('address')?.errors?.['required']">La dirección es obligatoria.</span>
+          <span *ngIf="form.get('address')?.errors?.['maxlength']">Máximo 200 caracteres.</span>
+        </div>
+      </div>
+
+      <!-- Estado -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Estado</label>
+        <select
+          formControlName="status"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm px-3 py-2 border focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+          <option value="active">Activo</option>
+          <option value="inactive">Inactivo</option>
+        </select>
+      </div>
+
+    </form>
+  </app-generic-modal>
+
+</div>
+
