@@ -1,7 +1,7 @@
 # Estado del Proyecto — Sistema de Gestión Territorial
 
 > Documento de seguimiento del equipo frontend. Se actualiza a medida que se completan casos de uso.
-> Última actualización: 2026-06-12 — CU-03 (Ciudadanos) implementado por Adrián
+> Última actualización: 2026-06-13 — CU-04 (Categorías) implementado por Adrián
 
 ---
 
@@ -13,8 +13,8 @@
 | Autenticación | CU-08 | Logout | ✅ Completado | Adrián |
 | Administración | CU-01 | Gestión de Entidades | ⬜ Pendiente | — |
 | Administración | CU-02 | Gestión de Funcionarios | ⬜ Pendiente | — |
-| Administración | CU-03 | Gestión de Ciudadanos | ✅ Completado | Adrián |
-| Administración | CU-04 | Gestión de Categorías | ⬜ Pendiente | Adrián |
+| Administración | CU-03 | Gestión de Ciudadanos | 🔄 En progreso | Adrián |
+| Administración | CU-04 | Gestión de Categorías | ✅ Completado | Adrián |
 | Administración | CU-05 | Gestión de Comunas | ✅ Completado | Nico |
 | Administración | CU-06 | Gestión de Barrios | ✅ Completado | Nico |
 | Mapa | CU-09 | Demarcar polígono de barrio | ⬜ Pendiente | — |
@@ -62,13 +62,26 @@
 - Ruta `/neighborhoods` registrada y entrada añadida al sidebar
 - **Pendiente:** mismo problema con mocks de filtros; relación con Comunas depende de que CU-05 tenga datos reales
 
-### ✅ CU-03 — Gestión de Ciudadanos _(Adrián, 2026-06-12)_
+### 🔄 CU-03 — Gestión de Ciudadanos _(Adrián, 2026-06-12)_
 - Modelo `Citizen` con DTOs: `CitizenRequestDto`, `CitizenSearchRequestDto`, `CitizenPaginatedResponseDto`, `CitizenResponseMessageDto`
 - `CitizenService` extiende `CrudService<Citizen>`: métodos `createCitizen`, `updateCitizen`, `searchByFilter` (búsqueda por nombre vía `?q=`)
 - Página `CitizenComponent` con CRUD completo: tabla paginada, búsqueda por texto, modal crear/editar, confirmación de eliminación con SweetAlert2
 - Validaciones en todos los campos: `name` (letras/espacios, 3-100 chars), `email` (formato), `phone` (solo dígitos, 7-15 chars), `address` (máx 200 chars)
 - Ruta `/citizens` registrada en `app.routes.ts` y entrada añadida al sidebar
 - **Nota:** el parámetro de búsqueda del backend es `q` (no `search`) — confirmado con el equipo backend
+- **Pendiente:** agregar columna `created_at` (Fecha de registro) a la tabla
+- **Pendiente:** implementar mapa interactivo (Leaflet) para seleccionar la dirección del ciudadano — al crear/editar, el usuario hace clic en el mapa para colocar un pin y el campo `address` se rellena con la dirección correspondiente. Mockup de referencia disponible.
+
+### ✅ CU-04 — Gestión de Categorías _(Adrián, 2026-06-13)_
+- Modelo `Category` con DTOs: `CategoryRequestDto`, `CategorySearchRequestDto`, `CategoryPaginatedResponseDto`, `CategoryResponseMessageDto`
+- `CategoryService` extiende `CrudService<Category>`: métodos `createCategory`, `updateCategory`, `searchByFilter` (búsqueda vía `?q=`)
+- Página `CategoryComponent` con CRUD completo: tabla paginada, búsqueda, modal crear/editar, confirmación con SweetAlert2
+- Soporte de jerarquía: `id_parent_category` opcional — el select de padre carga desde `getAll()` y excluye la categoría actual al editar
+- Tabla ordenada jerárquicamente: categoría padre → sus hijos → siguiente padre. Columna "Tipo" (Categoría / Subcategoría) y borde lateral azul para identificar padres visualmente
+- Protección de eliminación: si una categoría tiene subcategorías asociadas se muestra alerta "Acción requerida" en vez del confirm normal
+- Upload de imagen desde PC vía `FormData` (campo `file`) — mismo endpoint POST/PUT, backend detecta `multipart/form-data`
+- `DynamicTableComponent` extendido con `rowClassFn` (input opcional) y soporte de columnas tipo `image` — sin impacto en otras tablas del proyecto
+- Ruta `/categories` registrada en `app.routes.ts` y entrada añadida al sidebar
 
 ---
 
@@ -90,9 +103,10 @@
 | `CrudService<T>` genérico | ✅ | `src/app/services/crud.service.ts` — base para CU-01 al CU-06 |
 | `PagedResponse<T>` | ✅ | `src/app/models/paged-response.ts` |
 | Endpoints backend confirmados | ✅ | entities, officials, citizens, categories, communes, neighborhoods |
-| Modelos territoriales (`models/`) | 🔄 | `commune.ts`, `neighborhood.ts`, `citizen.ts` ✅ — categorías pendiente |
-| Servicios por recurso | 🔄 | `CommuneService`, `NeighborhoodService`, `CitizenService` ✅ — resto pendiente |
-| Sidebar actualizado con módulos | 🔄 | Comunas, Barrios y Ciudadanos ✅ — resto pendiente |
+| Modelos territoriales (`models/`) | 🔄 | `commune.ts`, `neighborhood.ts`, `citizen.ts`, `category.ts` ✅ — resto pendiente |
+| Servicios por recurso | 🔄 | `CommuneService`, `NeighborhoodService`, `CitizenService`, `CategoryService` ✅ — resto pendiente |
+| Sidebar actualizado con módulos | 🔄 | Comunas, Barrios, Ciudadanos y Categorías ✅ — resto pendiente |
+| `DynamicTableComponent` extendido | ✅ | Soporta `rowClassFn` para estilos por fila y columnas tipo `image` |
 | Leaflet instalado (mapas) | ⬜ | Necesario para CU-09/10/11/12/14 |
 
 ---

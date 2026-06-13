@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { CrudService } from './crud.service';
-import { Category, CategoryRequestDto } from '../models/category';
+import { Category } from '../models/category';
 import { PagedResponse } from '../models/paged-response';
 import { environment } from '../../environments/environments';
 
@@ -15,12 +15,12 @@ export class CategoryService extends CrudService<Category> {
   private httpClient = inject(HttpClient);
   private apiBaseUrl = environment.apiUrl;
 
-  createCategory(categoryData: CategoryRequestDto): Observable<Category> {
-    return this.httpClient.post<Category>(`${this.apiBaseUrl}/${this.resource}`, categoryData);
+  createCategory(formData: FormData): Observable<Category> {
+    return this.httpClient.post<Category>(`${this.apiBaseUrl}/${this.resource}`, formData);
   }
 
-  updateCategory(idCategory: number, categoryData: CategoryRequestDto): Observable<Category> {
-    return this.httpClient.put<Category>(`${this.apiBaseUrl}/${this.resource}/${idCategory}`, categoryData);
+  updateCategory(idCategory: number, formData: FormData): Observable<Category> {
+    return this.httpClient.put<Category>(`${this.apiBaseUrl}/${this.resource}/${idCategory}`, formData);
   }
 
   searchByFilter(search: string, page: number, pageSize: number): Observable<PagedResponse<Category>> {

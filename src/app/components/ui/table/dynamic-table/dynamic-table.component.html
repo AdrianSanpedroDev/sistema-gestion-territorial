@@ -29,10 +29,18 @@
 
         <tbody class="bg-white divide-y divide-gray-200">
             @for (row of data; track $index) {
-            <tr>
+            <tr [ngClass]="rowClassFn ? rowClassFn(row) : ''">
                 @for (c of columns; track $index) {
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {{ getValue(row, c.key) }}
+                    @if (c.type === 'image') {
+                        @if (getValue(row, c.key)) {
+                            <img [src]="getValue(row, c.key)" class="w-10 h-10 rounded-full object-cover">
+                        } @else {
+                            <span class="inline-flex w-10 h-10 rounded-full bg-gray-200 items-center justify-center text-xs text-gray-400">N/A</span>
+                        }
+                    } @else {
+                        {{ getValue(row, c.key) }}
+                    }
                 </td>
                 }
 

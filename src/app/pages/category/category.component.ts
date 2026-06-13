@@ -5,7 +5,7 @@ import { FilterBarComponent } from '../../components/ui/filter-bar/filter-bar.co
 import { DynamicTableComponent } from '../../components/ui/table/dynamic-table/dynamic-table.component';
 import { GenericModalComponent } from '../../components/ui/generic-modal/generic-modal.component';
 import { CategoryService } from '../../services/category.service';
-import { Category, CategoryRequestDto } from '../../models/category';
+import { Category } from '../../models/category';
 import { ColumnDef } from '../../models/component-dynamic-table/column-def';
 import { ActionButton } from '../../models/component-dynamic-table/action-button';
 import { TablePageEvent } from '../../models/component-dynamic-table/table-page-event';
@@ -21,72 +21,68 @@ export class CategoryComponent implements OnInit {
   private categoryService = inject(CategoryService);
   private fb = inject(FormBuilder);
 
-  // Estado de la tabla
-  categories: Category[] = [];
+  // Datos crudos de la página actual — ids numéricos preservados para ordenamiento y validaciones
+  rawCategories: Category[] = [];
+
+  // Todas las categorías sin paginar — para el select de padre y validar hijos al eliminar
+  allCategories: Category[] = [];
+
   loading = false;
   page = 1;
   pageSize = 5;
   totalItems = 0;
-
-  // Todas las categorías para el select de categoría padre
-  allCategories: Category[] = [];
-
-  // Estado del filtro de búsqueda
   searchTerm = '';
 
-  // Columnas para app-dynamic-table
   columns: ColumnDef[] = [
-    { key: 'name',              header: 'Nombre'      },
-    { key: 'description',       header: 'Descripción' },
-    { key: 'id_parent_category', header: 'Cat. Padre' },
-    { key: 'status',            header: 'Estado'      }
+    { key: 'image_url',           header: 'Imagen',      type: 'image' },
+    { key: 'name',                header: 'Nombre'       },
+    { key: 'tipo',                header: 'Tipo'         },
+    { key: 'description',         header: 'Descripción'  },
+    { key: 'id_parent_category',  header: 'Cat. Padre'   },
+    { key: 'status',              header: 'Estado'       }
   ];
 
-  // Botones de acción para cada fila
+  rowClassFn = (row: any): string =>
+    row.tipo === 'Subcategoría' ? 'bg-gray-50' : 'bg-white font-medium border-l-4 border-blue-400';
+
   actions: ActionButton[] = [
     { id: 'edit',   label: 'Editar',   class: 'mr-2 px-3 py-1 rounded bg-yellow-500 text-white hover:bg-yellow-600' },
     { id: 'delete', label: 'Eliminar', class: 'px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700'           }
   ];
 
-  // Estado del modal
   isModalOpen = false;
   modalMode: 'create' | 'edit' = 'create';
   currentCategoryId: number | null = null;
   form!: FormGroup;
 
-  ngOnInit() {
-  this.initForm();
-  this.categoryService.getAll().subscribe({
-    next: (cats) => {
-      this.allCategories = cats;
-      this.loadData();        // carga la tabla solo después de tener los nombres
-    },
-    error: () => {
-      this.allCategories = [];
-      this.loadData();
-    }
-  });
-  }
+  selectedFile: File | null = null;
+  imagePreview: string | null = null;
 
+  ngOnInit() {
+    this.initForm();
+    // allCategories debe cargarse primero para que categoriesSorted pueda resolver nombres
+    this.categoryService.getAll().subscribe({
+      next: (cats) => {
+        this.allCategories = cats;
+        this.loadData();
+      },
+      error: () => {
+        this.allCategories = [];
+        this.loadData();
+      }
+    });
+  }
 
   initForm() {
     this.form = this.fb.group({
-      id_parent_category: [null],  // opcional — sin Validators.required
+      id_parent_category: [null],
       name:        ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
       description: ['', [Validators.required, Validators.maxLength(500)]],
-      image_url:   [null],         // opcional — sin validación por ahora
+      image_url:   [null],
       status:      ['active', Validators.required]
     });
   }
 
-  loadAllCategories() {
-    this.categoryService.getAll().subscribe({
-      next: (cats) => this.allCategories = cats,
-      error: () => this.allCategories = []
-    });
-  }
-
-  // Getter computado — excluye la categoría actual para evitar auto-referencia
   get availableParentCategories(): Category[] {
     if (this.modalMode === 'edit' && this.currentCategoryId) {
       return this.allCategories.filter(c => c.id_category !== this.currentCategoryId);
@@ -94,33 +90,57 @@ export class CategoryComponent implements OnInit {
     return this.allCategories;
   }
 
-  loadData() {
-  this.loading = true;
+  // Array ordenado: raíz → sus hijos → siguiente raíz → sus hijos...
+  // Resuelve id_parent_category al nombre para mostrarlo en la tabla
+  get categoriesSorted(): any[] {
+    const roots = this.rawCategories.filter(c => !c.id_parent_category);
+    const result: any[] = [];
 
-  const request$ = this.searchTerm
-    ? this.categoryService.searchByFilter(this.searchTerm, this.page, this.pageSize)
-    : this.categoryService.getPaged(this.page, this.pageSize);
-
-  request$.subscribe({
-    next: (res) => {
-      const response = res as any;
-      const raw: Category[] = response.items || response.data || response.content || (Array.isArray(response) ? response : []);
-      this.categories = raw.map(cat => ({
-        ...cat,
-        id_parent_category: cat.id_parent_category
-          ? this.allCategories.find(p => p.id_category === cat.id_parent_category)?.name ?? cat.id_parent_category
-          : null
-      })) as any;
-      this.totalItems = response.totalItems || response.total || response.totalElements || this.categories.length;
-      this.loading    = false;
-    },
-    error: () => {
-      this.loading    = false;
-      this.categories = [];
+    for (const root of roots) {
+      result.push({ ...root, id_parent_category: '', tipo: 'Categoría' });
+      this.rawCategories
+        .filter(c => c.id_parent_category === root.id_category)
+        .forEach(child => result.push({ ...child, id_parent_category: root.name, tipo: 'Subcategoría' }));
     }
-  });
+
+    // Subcategorías cuyo padre no está en la página actual
+    const rootIds = new Set(roots.map(r => r.id_category));
+    this.rawCategories
+      .filter(c => c.id_parent_category && !rootIds.has(c.id_parent_category as number))
+      .forEach(orphan => result.push({
+        ...orphan,
+        id_parent_category: this.getParentName(orphan.id_parent_category),
+        tipo: 'Subcategoría'
+      }));
+
+    return result;
   }
 
+  getParentName(id: number | null): string {
+    if (!id) return '';
+    return this.allCategories.find(c => c.id_category === id)?.name ?? String(id);
+  }
+
+  loadData() {
+    this.loading = true;
+
+    const request$ = this.searchTerm
+      ? this.categoryService.searchByFilter(this.searchTerm, this.page, this.pageSize)
+      : this.categoryService.getPaged(this.page, this.pageSize);
+
+    request$.subscribe({
+      next: (res) => {
+        const response = res as any;
+        this.rawCategories = response.items || response.data || response.content || (Array.isArray(response) ? response : []);
+        this.totalItems    = response.totalItems || response.total || response.totalElements || this.rawCategories.length;
+        this.loading       = false;
+      },
+      error: () => {
+        this.loading       = false;
+        this.rawCategories = [];
+      }
+    });
+  }
 
   onSearch(event: any) {
     this.searchTerm = event.target.value;
@@ -134,11 +154,13 @@ export class CategoryComponent implements OnInit {
     this.loadData();
   }
 
-  handleAction(event: { actionId: string; row: Category }) {
+  handleAction(event: { actionId: string; row: any }) {
+    // Recuperar el objeto original con id numérico para editar/eliminar correctamente
+    const original = this.rawCategories.find(c => c.id_category === event.row.id_category) ?? event.row;
     if (event.actionId === 'edit') {
-      this.openModal('edit', event.row);
+      this.openModal('edit', original);
     } else if (event.actionId === 'delete') {
-      this.confirmDelete(event.row);
+      this.confirmDelete(original);
     }
   }
 
@@ -147,40 +169,62 @@ export class CategoryComponent implements OnInit {
     this.isModalOpen = true;
     if (mode === 'edit' && category) {
       this.currentCategoryId = category.id_category;
+      this.selectedFile = null;
+      this.imagePreview = category.image_url ?? null;
       this.form.patchValue({
         id_parent_category: category.id_parent_category,
         name:               category.name,
         description:        category.description,
-        image_url:          category.image_url,
         status:             category.status
       });
     } else {
       this.currentCategoryId = null;
+      this.selectedFile = null;
+      this.imagePreview = null;
       this.form.reset({ status: 'active', id_parent_category: null, image_url: null });
     }
+  }
+
+  onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+    this.selectedFile = input.files[0];
+    this.imagePreview = URL.createObjectURL(this.selectedFile);
   }
 
   closeModal() {
     this.isModalOpen = false;
     this.form.reset();
+    this.selectedFile = null;
+    this.imagePreview = null;
   }
 
   saveCategory() {
     if (this.form.invalid) return;
 
     this.loading = true;
-    const dto: CategoryRequestDto = this.form.value;
+
+    const formData = new FormData();
+    formData.append('name',        this.form.get('name')!.value);
+    formData.append('description', this.form.get('description')!.value);
+    formData.append('status',      this.form.get('status')!.value);
+    const parentId = this.form.get('id_parent_category')!.value;
+    if (parentId !== null && parentId !== undefined) {
+      formData.append('id_parent_category', String(parentId));
+    }
+    if (this.selectedFile) {
+      formData.append('file', this.selectedFile, this.selectedFile.name);
+    }
 
     const request$ = this.modalMode === 'create'
-      ? this.categoryService.createCategory(dto)
-      : this.categoryService.updateCategory(this.currentCategoryId!, dto);
+      ? this.categoryService.createCategory(formData)
+      : this.categoryService.updateCategory(this.currentCategoryId!, formData);
 
     request$.subscribe({
       next: () => {
         Swal.fire('Éxito', `Categoría ${this.modalMode === 'create' ? 'creada' : 'actualizada'} correctamente`, 'success');
         this.closeModal();
-        this.loadData();
-        this.loadAllCategories();
+        this.reloadAll();
       },
       error: () => {
         Swal.fire('Error', 'Ocurrió un error al guardar', 'error');
@@ -190,6 +234,18 @@ export class CategoryComponent implements OnInit {
   }
 
   confirmDelete(category: Category) {
+    // Bloquear eliminación si la categoría tiene subcategorías asociadas
+    const hasChildren = this.allCategories.some(c => c.id_parent_category === category.id_category);
+    if (hasChildren) {
+      Swal.fire({
+        title: 'Acción requerida',
+        text: `"${category.name}" tiene subcategorías asociadas. Elimínalas o reasígnalas antes de continuar.`,
+        icon: 'warning',
+        confirmButtonText: 'Entendido'
+      });
+      return;
+    }
+
     Swal.fire({
       title: '¿Eliminar categoría?',
       text: `Eliminarás: ${category.name}`,
@@ -205,14 +261,26 @@ export class CategoryComponent implements OnInit {
         this.categoryService.delete(category.id_category).subscribe({
           next: () => {
             Swal.fire('Eliminado', 'La categoría ha sido eliminada.', 'success');
-            this.loadData();
-            this.loadAllCategories();
+            this.reloadAll();
           },
           error: () => {
             Swal.fire('Error', 'No se pudo eliminar la categoría.', 'error');
             this.loading = false;
           }
         });
+      }
+    });
+  }
+
+  private reloadAll() {
+    this.categoryService.getAll().subscribe({
+      next: (cats) => {
+        this.allCategories = cats;
+        this.loadData();
+      },
+      error: () => {
+        this.allCategories = [];
+        this.loadData();
       }
     });
   }

@@ -21,6 +21,7 @@ export class DynamicTableComponent<T extends Record<string, any>> {
   @Input() totalItems = 0;
   @Input('totalPages') externalTotalPages?: number;
   @Input() loading = false;
+  @Input() rowClassFn?: (row: T) => string;
 
   @Output() pageChange = new EventEmitter<TablePageEvent>();
   @Output() action = new EventEmitter<{ actionId: string; row: T }>();
