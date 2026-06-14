@@ -49,5 +49,10 @@ export const navItems: NavItem[] = [
     iconName: 'solar:user-circle-line-duotone',
     route: '/gestion-territorial',
   },
+  {
+    displayName: 'Seguimiento',
+    iconName: 'solar:map-line-duotone',
+    route: '/tracking', 
+  },
 
 ];

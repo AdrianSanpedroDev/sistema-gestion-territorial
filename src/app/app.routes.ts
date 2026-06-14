@@ -29,6 +29,11 @@ export const routes: Routes = [
         loadChildren: () => import('./pages/neighborhood/neighborhood.routes').then((m) => m.NeighborhoodRoutes),
       },
       {
+        path: 'tracking',
+        loadChildren: () => 
+          import('./pages/tracking-page/tracking-page.routes').then((m) => m.TRACKING_ROUTES),
+      },
+      {
         path: 'users',
         children: [
           {

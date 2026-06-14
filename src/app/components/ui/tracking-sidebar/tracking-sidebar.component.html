@@ -1,0 +1,70 @@
+<div class="sidebar-container bg-white w-80 h-full border-l border-gray-200 flex flex-col shadow-sm">
+  
+  <div class="p-4 border-b border-gray-100 flex justify-between items-center">
+    <h2 class="text-lg font-semibold text-gray-800">Funcionarios ({{ officials.length }})</h2>
+  </div>
+
+  <div class="p-4 border-b border-gray-100 flex gap-2">
+    <div class="relative flex-1">
+      <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </span>
+      <input 
+        type="text" 
+        [formControl]="searchControl"
+        placeholder="Buscar funcionario..." 
+        class="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+    </div>
+  </div>
+
+  <div *ngIf="isLoading" class="p-4 text-center text-sm text-gray-500">
+    Buscando funcionarios...
+  </div>
+
+  <div class="flex-1 overflow-y-auto" *ngIf="!isLoading">
+    
+    <div 
+      *ngFor="let official of officials" 
+      (click)="onSelectOfficial(official)"
+      class="p-4 border-b border-gray-50 flex items-center justify-between hover:bg-blue-50 cursor-pointer transition-colors"
+    >
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm">
+          {{ official.name.charAt(0) | uppercase }}
+        </div>
+        
+        <div>
+          <p class="text-sm font-semibold text-gray-800">{{ official.name }}</p>
+          <div class="flex items-center gap-1 mt-0.5">
+            <span 
+              class="w-2 h-2 rounded-full" 
+              [ngClass]="isOnline(official) ? 'bg-green-500' : 'bg-gray-400'"
+            ></span>
+            <span class="text-xs text-gray-500">
+              {{ isOnline(official) ? 'En línea' : 'Sin conexión' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-right flex items-center gap-2">
+        <div class="flex flex-col items-end">
+          <span class="text-xs text-gray-800">
+            {{ official.last_gps_update ? (official.last_gps_update | date:'shortTime') : '--:--' }}
+          </span>
+        </div>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+      </div>
+    </div>
+    
+    <div *ngIf="officials.length === 0" class="p-4 text-center text-sm text-gray-500">
+      No se encontraron resultados.
+    </div>
+  </div>
+
+</div>

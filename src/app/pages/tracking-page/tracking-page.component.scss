@@ -1,0 +1,15 @@
+// Aseguramos que el contenedor del mapa ocupe todo el espacio
+#main-tracking-map {
+  width: 100%;
+  height: 100%;
+}
+
+// Estilos globales para los marcadores inyectados por Leaflet
+::ng-deep .custom-official-marker {
+  // Quitamos el background transparente que Leaflet pone por defecto a los divIcons
+  background: transparent !important;
+  border: none !important;
+  
+  // Opcional: una leve animación al cambiar de posición
+  transition: transform 0.5s ease-in-out;
+}

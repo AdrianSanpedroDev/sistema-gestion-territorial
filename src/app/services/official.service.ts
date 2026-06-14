@@ -31,4 +31,9 @@ export class OfficialService extends CrudService<Official> {
 
     return this.httpClient.get<PagedResponse<Official>>(`${this.apiBaseUrl}/${this.resource}/search`, { params });
   }
+
+  searchOfficials(query: string): Observable<Official[]> {
+    const params = new HttpParams().set('q', query);
+    return this.httpClient.get<Official[]>(`${this.apiBaseUrl}/${this.resource}/search`, { params });
+  }
 }
