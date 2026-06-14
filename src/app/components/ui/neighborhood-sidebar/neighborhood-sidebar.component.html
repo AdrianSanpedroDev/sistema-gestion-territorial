@@ -1,0 +1,28 @@
+<div class="sidebar-container">
+  <h3>Barrios</h3>
+  
+  <div class="search-box">
+    <input 
+      type="text" 
+      placeholder="Buscar barrio..." 
+      [(ngModel)]="searchTerm"
+      (keyup.enter)="handleSearch()"
+    />
+    <button (click)="handleSearch()">Buscar</button>
+  </div>
+
+  <div class="neighborhood-list" *ngIf="!isLoading">
+    <div 
+      class="neighborhood-item" 
+      *ngFor="let n of neighborhoods"
+      [class.selected]="n.id_neighborhood === selectedNeighborhoodId"
+      (click)="selectNeighborhood(n)">
+      <strong>{{ n.name }}</strong>
+      <span>Estado: {{ n.status }}</span>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-indicator">
+    Cargando barrios...
+  </div>
+</div>

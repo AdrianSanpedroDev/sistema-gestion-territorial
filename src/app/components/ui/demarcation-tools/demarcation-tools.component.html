@@ -1,0 +1,52 @@
+<div class="tools-container">
+  <h3>Demarcación: {{ selectedNeighborhoodName }}</h3>
+
+  <div class="toolbar">
+    <button 
+      [class.active]="currentMode === 'add'" 
+      (click)="setMode('add')">
+      📍 Agregar Puntos
+    </button>
+    <button 
+      [class.active]="currentMode === 'edit'" 
+      (click)="setMode('edit')">
+      ✏️ Editar Puntos
+    </button>
+    <button class="btn-danger" (click)="clearPoints()">
+      🗑️ Limpiar
+    </button>
+  </div>
+
+  <div class="coordinates-section">
+    <h4>Coordenadas del Polígono ({{ points.length }})</h4>
+    <table class="coords-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Latitud</th>
+          <th>Longitud</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let point of points; let i = index">
+          <td>{{ point.order }}</td>
+          <td>{{ point.latitude | number:'1.5-5' }}</td>
+          <td>{{ point.longitude | number:'1.5-5' }}</td>
+        </tr>
+        <tr *ngIf="points.length === 0">
+          <td colspan="3" class="text-center">No hay puntos registrados.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="actions-footer">
+    <button class="btn-cancel" (click)="cancelDemarcation()">Cancelar</button>
+    <button 
+      class="btn-save" 
+      [disabled]="points.length < 3 || isSaving" 
+      (click)="savePolygon()">
+      {{ isSaving ? 'Guardando...' : 'Guardar Polígono' }}
+    </button>
+  </div>
+</div>
