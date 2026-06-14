@@ -1,28 +1,70 @@
-<div class="sidebar-container">
-  <h3>Barrios</h3>
-  
-  <div class="search-box">
-    <input 
-      type="text" 
-      placeholder="Buscar barrio..." 
-      [(ngModel)]="searchTerm"
-      (keyup.enter)="handleSearch()"
-    />
-    <button (click)="handleSearch()">Buscar</button>
-  </div>
+<!-- MODIFICADOOO OJO SUJETO A CAMBIOS -->
+<div class="h-full flex flex-col bg-white">
 
-  <div class="neighborhood-list" *ngIf="!isLoading">
-    <div 
-      class="neighborhood-item" 
-      *ngFor="let n of neighborhoods"
-      [class.selected]="n.id_neighborhood === selectedNeighborhoodId"
-      (click)="selectNeighborhood(n)">
-      <strong>{{ n.name }}</strong>
-      <span>Estado: {{ n.status }}</span>
+  <!-- Header -->
+  <div class="p-4 border-b border-gray-200">
+    <h3 class="text-lg font-semibold mb-4">
+      Barrios
+    </h3>
+
+    <div class="flex gap-2">
+      <input
+        type="text"
+        placeholder="Buscar barrio..."
+        [(ngModel)]="searchTerm"
+        (keyup.enter)="handleSearch()"
+        class="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+      />
+
+      <button
+        (click)="handleSearch()"
+        class="px-4 py-2 bg-primary text-white rounded-md hover:opacity-90 transition">
+        Buscar
+      </button>
     </div>
   </div>
 
-  <div *ngIf="isLoading" class="loading-indicator">
-    Cargando barrios...
+  <!-- Lista -->
+  <div
+    *ngIf="!isLoading"
+    class="flex-1 overflow-y-auto">
+
+    <button
+      type="button"
+      *ngFor="let n of neighborhoods"
+      (click)="selectNeighborhood(n)"
+      class="w-full text-left p-4 border-b border-gray-100 transition hover:bg-gray-50"
+      [ngClass]="{
+        'bg-light-primary border-l-4 border-primary': n.id_neighborhood === selectedNeighborhoodId
+      }">
+
+      <div class="font-medium text-gray-900">
+        {{ n.name }}
+      </div>
+
+      <div class="text-sm text-gray-500 mt-1">
+        Estado: {{ n.status }}
+      </div>
+
+    </button>
+
+    <div
+      *ngIf="neighborhoods.length === 0"
+      class="p-6 text-center text-gray-500">
+      No se encontraron barrios.
+    </div>
+
   </div>
+
+  <!-- Loading -->
+  <div
+    *ngIf="isLoading"
+    class="flex flex-col items-center justify-center flex-1 gap-3 text-gray-500">
+
+    <div class="w-6 h-6 border-2 border-gray-300 border-t-primary rounded-full animate-spin"></div>
+
+    <span>Cargando barrios...</span>
+
+  </div>
+
 </div>

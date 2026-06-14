@@ -1,0 +1,36 @@
+<div class="territorial-page-layout">
+  
+  <aside class="sidebar-area">
+    <app-neighborhood-sidebar 
+      [neighborhoods]="neighborhoods"
+      [isLoading]="isLoadingNeighborhoods"
+      (onSearch)="onSearch($event)"
+      (onSelectNeighborhood)="onSelectNeighborhood($event)">
+    </app-neighborhood-sidebar>
+  </aside>
+
+  <main class="map-area">
+    <app-map 
+      [initialLat]="5.06889" 
+      [initialLng]="-75.51738" 
+      [initialZoom]="13">
+    </app-map>
+  </main>
+
+  <aside class="tools-area" *ngIf="selectedNeighborhood">
+    <app-demarcation-tools
+      [points]="currentPoints"
+      [isSaving]="isSaving"
+      [selectedNeighborhoodName]="selectedNeighborhood.name"
+      (onModeChange)="onModeChange($event)"
+      (onClear)="onClearPoints()"
+      (onCancel)="onCancel()"
+      (onSave)="onSavePolygon($event)">
+    </app-demarcation-tools>
+  </aside>
+
+  <div class="overlay-message" *ngIf="!selectedNeighborhood">
+    <h2>👆 Seleccione un barrio del panel izquierdo para comenzar a demarcar.</h2>
+  </div>
+
+</div>

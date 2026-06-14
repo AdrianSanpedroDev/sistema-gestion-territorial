@@ -4,7 +4,7 @@ import { MapService } from '../../../services/map.service';
 @Component({
   selector: 'app-map',
   templateUrl: './map.component.html',
-  styleUrls: ['./map.component.css']
+  styleUrls: ['./map.component.scss']
 })
 export class MapComponent implements AfterViewInit, OnDestroy {
   @Input() initialLat: number = 5.06889; // Latitud por defecto (ej. Manizales)

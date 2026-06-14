@@ -1,10 +1,14 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { Neighborhood } from '../../../models/neighborhood';
+import { CommonModule } from '@angular/common'; // <-- Agregado para *ngIf y *ngFor
+import { FormsModule } from '@angular/forms';   // <-- Agregado para [(ngModel)]
+import { Neighborhood } from '../../../models/neighborhood'; // Verifica que esta ruta apunte bien a tu modelo
 
 @Component({
   selector: 'app-neighborhood-sidebar',
+  standalone: true,
+  imports: [CommonModule, FormsModule], // <-- IMPORTANTE: Agregar esto aquí
   templateUrl: './neighborhood-sidebar.component.html',
-  styleUrls: ['./neighborhood-sidebar.component.css']
+  styleUrls: ['./neighborhood-sidebar.component.scss'] // <-- Ojo aquí, mira el paso 2
 })
 export class NeighborhoodSidebarComponent {
   @Input() neighborhoods: Neighborhood[] = [];

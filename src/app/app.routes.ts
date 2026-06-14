@@ -57,6 +57,12 @@ export const routes: Routes = [
         path: 'officials',
         loadChildren: () => import('./pages/official/official.routes').then((m) => m.OfficialRoutes),
       },
+      {
+        path: 'gestion-territorial',
+        loadChildren: () => 
+          import('./pages/territorial-management/territorial-management.routes')
+            .then((m) => m.TERRITORIAL_ROUTES),
+      },
     ],
   },
   {

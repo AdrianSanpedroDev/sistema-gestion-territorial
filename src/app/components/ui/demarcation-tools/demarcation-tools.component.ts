@@ -1,10 +1,13 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { CommonModule } from '@angular/common'; // <-- Agregado
 import { DraftPoint } from '../../../models/map';
 
 @Component({
   selector: 'app-demarcation-tools',
+  standalone: true, // <-- Agregado
+  imports: [CommonModule], // <-- Agregado
   templateUrl: './demarcation-tools.component.html',
-  styleUrls: ['./demarcation-tools.component.css']
+  styleUrls: ['./demarcation-tools.component.scss'] 
 })
 export class DemarcationToolsComponent {
   @Input() points: DraftPoint[] = [];
