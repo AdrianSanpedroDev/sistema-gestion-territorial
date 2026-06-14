@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Subject, Observable } from 'rxjs';
 import * as L from 'leaflet';
 import { DraftPoint } from '../models/map';
-//este servicio usa leaflet para el mapa
+
 @Injectable({
   providedIn: 'root'
 })
@@ -10,121 +10,127 @@ export class MapService {
   private map!: L.Map;
   private polygonLayer!: L.Polygon;
   private markersLayer: L.LayerGroup = new L.LayerGroup();
-  
-  // Arreglo temporal de coordenadas dibujadas
   private currentCoordinates: L.LatLng[] = [];
-
-  // Emitirá las coordenadas cada vez que cambien (al hacer clic o arrastrar)
   private coordinatesSubject = new Subject<DraftPoint[]>();
 
-  constructor() {}
+  constructor() {
+    this.fixMarkerIcons();
+  }
 
-  /**
-   * 1. Inicializa el mapa en un contenedor HTML dado
-   */
   initMap(elementId: string, centerLat: number, centerLng: number, zoom: number = 15): void {
     if (this.map) {
-      this.map.remove(); // Limpiar instancia previa si existe
+      this.map.remove();
     }
 
     this.map = L.map(elementId).setView([centerLat, centerLng], zoom);
 
-    // Cargar capa base (OpenStreetMap por defecto)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors'
     }).addTo(this.map);
 
     this.markersLayer.addTo(this.map);
-    
-    // Inicializar el polígono (Flujo: uniendo puntos en tiempo real)
-    this.polygonLayer = L.polygon([], { color: '#3388ff', weight: 3 }).addTo(this.map);
+    this.polygonLayer = L.polygon([], { color: '#3b82f6', weight: 3, fillOpacity: 0.15 }).addTo(this.map);
 
-    // Escuchar clics en el mapa para agregar puntos
     this.map.on('click', (e: L.LeafletMouseEvent) => this.onMapClick(e));
   }
 
-  /**
-   * 2. Maneja el evento de clic en el mapa
-   */
   private onMapClick(e: L.LeafletMouseEvent): void {
-    const latlng = e.latlng;
-    this.addPointToPolygon(latlng);
+    this.addPointToPolygon(e.latlng);
+  }
+
+  private addPointToPolygon(latlng: L.LatLng): void {
+    this.currentCoordinates.push(latlng);
+    this.refreshMapObjects();
   }
 
   /**
-   * 3. Añade un punto al polígono actual y dibuja un marcador
+   * Elimina un punto específico por su índice y refresca el mapa completo
    */
-  private addPointToPolygon(latlng: L.LatLng): void {
-    this.currentCoordinates.push(latlng);
-    this.updatePolygonRender();
-    this.addDraggableMarker(latlng, this.currentCoordinates.length - 1);
+  deletePointByIndex(index: number): void {
+    if (index >= 0 && index < this.currentCoordinates.length) {
+      this.currentCoordinates.splice(index, 1);
+      this.refreshMapObjects();
+    }
+  }
+
+  /**
+   * Sincroniza el polígono y los marcadores arrastrables basándose en el estado actual
+   */
+  private refreshMapObjects(): void {
+    // 1. Actualizar Polígono
+    this.polygonLayer.setLatLngs(this.currentCoordinates);
+
+    // 2. Limpiar y Redibujar Marcadores para actualizar sus scopes/índices
+    this.markersLayer.clearLayers();
+    this.currentCoordinates.forEach((latlng, idx) => {
+      const marker = L.marker(latlng, { draggable: true });
+      
+      marker.on('drag', (e) => {
+        const newLatLng = e.target.getLatLng();
+        
+        // REQUERIMIENTO HU-10: Preservar el id_point original al arrastrar el marcador
+        const existingId = (this.currentCoordinates[idx] as any).id_point;
+        this.currentCoordinates[idx] = newLatLng;
+        if (existingId) {
+          (this.currentCoordinates[idx] as any).id_point = existingId;
+        }
+
+        this.polygonLayer.setLatLngs(this.currentCoordinates); // Render en tiempo real
+      });
+
+      marker.on('dragend', () => {
+        this.emitCoordinatesChange();
+      });
+
+      this.markersLayer.addLayer(marker);
+    });
+
     this.emitCoordinatesChange();
   }
 
-  /**
-   * 4. Dibuja un marcador arrastrable (Cumple el Flujo alternativo 3a)
-   */
-  private addDraggableMarker(latlng: L.LatLng, index: number): void {
-    const marker = L.marker(latlng, { draggable: true });
-    
-    marker.on('drag', (e) => {
-      const newLatLng = e.target.getLatLng();
-      this.currentCoordinates[index] = newLatLng;
-      this.updatePolygonRender(); // Actualiza polígono en tiempo real al arrastrar
-      this.emitCoordinatesChange();
-    });
-
-    this.markersLayer.addLayer(marker);
-  }
-
-  /**
-   * 5. Refresca el polígono visualmente en el mapa
-   */
-  private updatePolygonRender(): void {
-    this.polygonLayer.setLatLngs(this.currentCoordinates);
-  }
-
-  /**
-   * 6. Convierte las coordenadas de Leaflet a nuestro modelo DraftPoint y las emite
-   */
   private emitCoordinatesChange(): void {
     const drafts: DraftPoint[] = this.currentCoordinates.map((c, index) => ({
+      id_point: (c as any).id_point, // 🌟 ¡SOLUCIÓN! Rescatamos el ID dinámico inyectado
       latitude: c.lat,
       longitude: c.lng,
       order: index + 1,
-      point_type: 'boundary' // Tipo por defecto para el perímetro del barrio
+      point_type: 'boundary'
     }));
     this.coordinatesSubject.next(drafts);
   }
 
-  /**
-   * 7. Observable al que el Componente se va a suscribir
-   */
   getCoordinatesObservable(): Observable<DraftPoint[]> {
     return this.coordinatesSubject.asObservable();
   }
 
-  /**
-   * 8. Carga un polígono existente (por si el barrio ya tenía puntos demarcados)
-   */
   loadExistingPolygon(points: DraftPoint[]): void {
-    this.clearMap();
-    // Ordenar los puntos usando el campo 'order'
-    const sortedPoints = points.sort((a, b) => a.order - b.order);
+    this.currentCoordinates = points
+      .sort((a, b) => a.order - b.order)
+      .map(p => {
+        const ll = L.latLng(p.latitude, p.longitude);
+        // Inyectamos dinámicamente el identificador único de la base de datos al objeto LatLng
+        (ll as any).id_point = (p as any).id_point || (p as any).id;
+        return ll;
+      });
     
-    sortedPoints.forEach(p => {
-      const latlng = L.latLng(p.latitude, p.longitude);
-      this.addPointToPolygon(latlng);
-    });
+    this.refreshMapObjects();
   }
 
-  /**
-   * Limpia marcadores y coordenadas (Útil para reiniciar o cambiar de barrio)
-   */
   clearMap(): void {
     this.currentCoordinates = [];
     this.markersLayer.clearLayers();
-    this.updatePolygonRender();
+    this.polygonLayer.setLatLngs([]);
     this.emitCoordinatesChange();
+  }
+
+  private fixMarkerIcons(): void {
+    const icon = L.icon({
+      iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+      iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+      shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41]
+    });
+    L.Marker.prototype.options.icon = icon;
   }
 }

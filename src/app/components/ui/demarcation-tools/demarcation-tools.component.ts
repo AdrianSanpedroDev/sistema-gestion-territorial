@@ -1,13 +1,13 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { CommonModule } from '@angular/common'; // <-- Agregado
+import { CommonModule } from '@angular/common';
 import { DraftPoint } from '../../../models/map';
 
 @Component({
   selector: 'app-demarcation-tools',
-  standalone: true, // <-- Agregado
-  imports: [CommonModule], // <-- Agregado
+  standalone: true,
+  imports: [CommonModule],
   templateUrl: './demarcation-tools.component.html',
-  styleUrls: ['./demarcation-tools.component.scss'] 
+  styleUrls: ['./demarcation-tools.component.scss']
 })
 export class DemarcationToolsComponent {
   @Input() points: DraftPoint[] = [];
@@ -17,13 +17,20 @@ export class DemarcationToolsComponent {
   @Output() onModeChange = new EventEmitter<'add' | 'edit'>();
   @Output() onClear = new EventEmitter<void>();
   @Output() onCancel = new EventEmitter<void>();
+  @Output() onDeletePoint = new EventEmitter<number>(); 
   @Output() onSave = new EventEmitter<DraftPoint[]>();
 
   currentMode: 'add' | 'edit' = 'add';
+  isToolsOpen: boolean = true;
+  isCoordsOpen: boolean = true;
 
   setMode(mode: 'add' | 'edit'): void {
     this.currentMode = mode;
     this.onModeChange.emit(mode);
+  }
+
+  deletePoint(index: number): void {
+    this.onDeletePoint.emit(index);
   }
 
   clearPoints(): void {
@@ -38,7 +45,7 @@ export class DemarcationToolsComponent {
     if (this.points.length >= 3) {
       this.onSave.emit(this.points);
     } else {
-      alert('Un polígono necesita al menos 3 puntos.');
+      alert('Un polígono necesita al menos 3 puntos para cerrarse de manera válida.');
     }
   }
 }

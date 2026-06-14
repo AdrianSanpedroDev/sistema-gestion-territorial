@@ -22,10 +22,11 @@
       [points]="currentPoints"
       [isSaving]="isSaving"
       [selectedNeighborhoodName]="selectedNeighborhood.name"
-      (onModeChange)="onModeChange($event)"
+      (onModeChange)="onModeChange($any($event))"
       (onClear)="onClearPoints()"
       (onCancel)="onCancel()"
-      (onSave)="onSavePolygon($event)">
+      (onDeletePoint)="onDeletePoint($event)"
+      (onSave)="onSavePolygon($any($event))">
     </app-demarcation-tools>
   </aside>
 

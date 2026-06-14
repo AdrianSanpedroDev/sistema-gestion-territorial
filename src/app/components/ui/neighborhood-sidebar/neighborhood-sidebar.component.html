@@ -1,11 +1,7 @@
-<!-- MODIFICADOOO OJO SUJETO A CAMBIOS -->
 <div class="h-full flex flex-col bg-white">
 
-  <!-- Header -->
   <div class="p-4 border-b border-gray-200">
-    <h3 class="text-lg font-semibold mb-4">
-      Barrios
-    </h3>
+    <h3 class="text-lg font-semibold mb-4">Barrios</h3>
 
     <div class="flex gap-2">
       <input
@@ -24,11 +20,7 @@
     </div>
   </div>
 
-  <!-- Lista -->
-  <div
-    *ngIf="!isLoading"
-    class="flex-1 overflow-y-auto">
-
+  <div *ngIf="!isLoading" class="flex-1 overflow-y-auto">
     <button
       type="button"
       *ngFor="let n of neighborhoods"
@@ -45,26 +37,16 @@
       <div class="text-sm text-gray-500 mt-1">
         Estado: {{ n.status }}
       </div>
-
     </button>
 
-    <div
-      *ngIf="neighborhoods.length === 0"
-      class="p-6 text-center text-gray-500">
+    <div *ngIf="neighborhoods.length === 0" class="p-6 text-center text-gray-500">
       No se encontraron barrios.
     </div>
-
   </div>
 
-  <!-- Loading -->
-  <div
-    *ngIf="isLoading"
-    class="flex flex-col items-center justify-center flex-1 gap-3 text-gray-500">
-
+  <div *ngIf="isLoading" class="flex flex-col items-center justify-center flex-1 gap-3 text-gray-500">
     <div class="w-6 h-6 border-2 border-gray-300 border-t-primary rounded-full animate-spin"></div>
-
     <span>Cargando barrios...</span>
-
   </div>
 
 </div>

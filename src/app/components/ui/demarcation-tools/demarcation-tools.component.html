@@ -1,52 +1,111 @@
-<div class="tools-container">
-  <h3>Demarcación: {{ selectedNeighborhoodName }}</h3>
-
-  <div class="toolbar">
-    <button 
-      [class.active]="currentMode === 'add'" 
-      (click)="setMode('add')">
-      📍 Agregar Puntos
-    </button>
-    <button 
-      [class.active]="currentMode === 'edit'" 
-      (click)="setMode('edit')">
-      ✏️ Editar Puntos
-    </button>
-    <button class="btn-danger" (click)="clearPoints()">
-      🗑️ Limpiar
-    </button>
+<div *ngIf="selectedNeighborhoodName && selectedNeighborhoodName !== 'Ninguno'" 
+     class="w-full max-w-sm bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden flex flex-col font-sans animate-fade-in">
+  
+  <div class="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 cursor-pointer" (click)="isToolsOpen = !isToolsOpen">
+    <span class="font-semibold text-gray-700 text-sm">Herramientas de demarcación</span>
+    <span class="text-gray-400 text-xs transform transition-transform duration-200" [class.rotate-180]="isToolsOpen">▼</span>
   </div>
 
-  <div class="coordinates-section">
-    <h4>Coordenadas del Polígono ({{ points.length }})</h4>
-    <table class="coords-table">
-      <thead>
+  <div *ngIf="isToolsOpen" class="p-4 flex flex-col gap-3 transition-all">
+    <div class="bg-blue-50/60 border border-blue-100 text-blue-700 rounded-lg p-3 text-xs leading-relaxed">
+      Haz clic en el mapa para agregar puntos. Arrastra un punto para ajustarlo.
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <button 
+        type="button"
+        (click)="setMode('add')"
+        [ngClass]="currentMode === 'add' ? 'border-blue-500 bg-blue-50/40 text-blue-600' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'"
+        class="w-full flex items-center gap-3 p-3 border rounded-xl text-left transition cursor-pointer">
+        <span class="text-blue-500 text-lg">📍</span>
+        <div class="flex flex-col">
+          <span class="text-xs font-semibold">Agregar puntos</span>
+          <span class="text-[11px] opacity-70">Haz clic en el mapa</span>
+        </div>
+      </button>
+
+      <button 
+        type="button"
+        (click)="setMode('edit')"
+        [ngClass]="currentMode === 'edit' ? 'border-blue-500 bg-blue-50/40 text-blue-600' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'"
+        class="w-full flex items-center gap-3 p-3 border rounded-xl text-left transition cursor-pointer">
+        <span class="text-gray-500 text-lg">✏️</span>
+        <div class="flex flex-col">
+          <span class="text-xs font-semibold">Editar puntos</span>
+          <span class="text-[11px] opacity-70">Arrastra los puntos existentes</span>
+        </div>
+      </button>
+
+      <button 
+        type="button" 
+        (click)="clearPoints()"
+        class="w-full flex items-center gap-3 p-3 border border-gray-200 bg-white text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 rounded-xl text-left transition cursor-pointer">
+        <span class="text-lg">🗑️</span>
+        <div class="flex flex-col">
+          <span class="text-xs font-semibold">Limpiar</span>
+          <span class="text-[11px] opacity-70">Eliminar todos los puntos</span>
+        </div>
+      </button>
+    </div>
+  </div>
+
+  <div class="flex items-center justify-between px-4 py-2 bg-gray-50/70 border-t border-b border-gray-100 cursor-pointer" (click)="isCoordsOpen = !isCoordsOpen">
+    <span class="font-medium text-gray-600 text-xs">Coordenadas del polígono ({{ points.length }} puntos)</span>
+    <span class="text-gray-400 text-[10px] transform transition-transform duration-200" [class.rotate-180]="isCoordsOpen">▼</span>
+  </div>
+
+  <div *ngIf="isCoordsOpen" class="max-h-48 overflow-y-auto border-b border-gray-100">
+    <table class="w-full text-left border-collapse">
+      <thead class="bg-gray-50 sticky top-0 border-b border-gray-100 z-10">
         <tr>
-          <th>#</th>
-          <th>Latitud</th>
-          <th>Longitud</th>
+          <th class="p-2 text-[11px] font-semibold text-gray-500 text-center w-10">#</th>
+          <th class="p-2 text-[11px] font-semibold text-gray-500">Latitud</th>
+          <th class="p-2 text-[11px] font-semibold text-gray-500">Longitud</th>
+          <th class="p-2 text-[11px] font-semibold text-gray-500 text-center w-12">Acción</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let point of points; let i = index">
-          <td>{{ point.order }}</td>
-          <td>{{ point.latitude | number:'1.5-5' }}</td>
-          <td>{{ point.longitude | number:'1.5-5' }}</td>
+        <tr *ngFor="let point of points; let i = index" class="border-b border-gray-50 hover:bg-gray-50/80 transition">
+          <td class="p-2 text-xs text-gray-400 text-center font-medium">{{ point.order }}</td>
+          <td class="p-2 text-xs font-mono text-gray-600">{{ point.latitude | number:'1.6-6' }}</td>
+          <td class="p-2 text-xs font-mono text-gray-600">{{ point.longitude | number:'1.6-6' }}</td>
+          <td class="p-2 text-center">
+            <button 
+              type="button" 
+              (click)="deletePoint(i)" 
+              class="text-gray-400 hover:text-red-500 p-1 rounded transition cursor-pointer"
+              title="Eliminar este punto">
+              ✕
+            </button>
+          </td>
         </tr>
         <tr *ngIf="points.length === 0">
-          <td colspan="3" class="text-center">No hay puntos registrados.</td>
+          <td colspan="4" class="p-4 text-xs text-gray-400 text-center italic">No hay puntos registrados.</td>
         </tr>
       </tbody>
     </table>
   </div>
 
-  <div class="actions-footer">
-    <button class="btn-cancel" (click)="cancelDemarcation()">Cancelar</button>
+  <div class="p-4 bg-white flex items-center justify-between gap-3 border-b border-gray-100">
     <button 
-      class="btn-save" 
-      [disabled]="points.length < 3 || isSaving" 
-      (click)="savePolygon()">
-      {{ isSaving ? 'Guardando...' : 'Guardar Polígono' }}
+      type="button" 
+      (click)="cancelDemarcation()"
+      class="flex-1 py-2 px-4 border border-blue-600 text-blue-600 rounded-lg text-xs font-medium hover:bg-blue-50 transition cursor-pointer text-center">
+      Cancelar
+    </button>
+    <button 
+      type="button" 
+      (click)="savePolygon()"
+      [disabled]="points.length < 3 || isSaving"
+      class="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition flex items-center justify-center gap-2 cursor-pointer">
+      <span>💾</span>
+      {{ isSaving ? 'Guardando...' : 'Guardar polígono' }}
     </button>
   </div>
+
+  <div class="p-3 bg-green-50 border-t border-green-100 flex items-center gap-2 text-green-700 text-[11px]">
+    <span class="bg-green-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold">✓</span>
+    <span>Al guardar, el polígono quedará asociado al barrio <strong>{{ selectedNeighborhoodName }}</strong>.</span>
+  </div>
+
 </div>

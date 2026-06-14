@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common'; // <-- IMPORTANTE para el *ngIf y *ngFor
+import { CommonModule } from '@angular/common'; 
 import { Subscription, forkJoin } from 'rxjs';
 
 // Servicios y Modelos
@@ -10,22 +10,22 @@ import { Neighborhood } from '../../models/neighborhood';
 import { DraftPoint } from '../../models/map';
 import { PointRequestDto } from '../../models/point';
 
-// IMPORTA TUS COMPONENTES HIJOS AQUÍ (Verifica que la ruta sea correcta)
+// Importación de Componentes Standalone hijos
 import { NeighborhoodSidebarComponent } from '../../components/ui/neighborhood-sidebar/neighborhood-sidebar.component';
 import { MapComponent } from '../../components/ui/map/map.component';
 import { DemarcationToolsComponent } from '../../components/ui/demarcation-tools/demarcation-tools.component';
 
 @Component({
-  selector: 'app-territorial-management',
-  standalone: true, // <-- 1. Agrega esto para que la página sea independiente
+  selector: 'territorial-management',
+  standalone: true, 
   imports: [
     CommonModule, 
     NeighborhoodSidebarComponent, 
-    MapComponent, 
+    MapComponent,
     DemarcationToolsComponent
-  ], // <-- 2. Registra los componentes hijos aquí
+  ], 
   templateUrl: './territorial-management.component.html',
-  styleUrls: ['./territorial-management.component.css'] // <-- 3. CAMBIADO A .scss
+  styleUrls: ['./territorial-management.component.css'] // Soportado correctamente como .scss
 })
 export class TerritorialManagementComponent implements OnInit, OnDestroy {
   // Estado de los Barrios
@@ -50,7 +50,7 @@ export class TerritorialManagementComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadNeighborhoods();
 
-    // Nos suscribimos a los cambios en el mapa (cuando el usuario hace clic o arrastra)
+    // Sincroniza los puntos del mapa con el estado local de la página
     this.coordsSubscription = this.mapService.getCoordinatesObservable().subscribe(points => {
       this.currentPoints = points;
     });
@@ -65,32 +65,26 @@ export class TerritorialManagementComponent implements OnInit, OnDestroy {
   // --- LÓGICA DEL SIDEBAR DE BARRIOS ---
 
   loadNeighborhoods(searchTerm?: string): void {
-  this.isLoadingNeighborhoods = true;
+    this.isLoadingNeighborhoods = true;
+    this.neighborhoodService.getAll().subscribe({
+      next: (res: Neighborhood[]) => {
+        this.allNeighborhoods = res; 
 
-  // Usamos 'getAll()' que es el método real de tu CrudService
-  this.neighborhoodService.getAll().subscribe({
-    next: (res: Neighborhood[]) => {
-      // Guardamos la copia completa en memoria
-      this.allNeighborhoods = res; 
-
-      // Si el usuario escribió un término en el buscador, filtramos localmente
-      if (searchTerm && searchTerm.trim() !== '') {
-        this.neighborhoods = this.allNeighborhoods.filter(barrio =>
-          barrio.name.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-      } else {
-        // Si no hay término de búsqueda, mostramos todos los barrios
-        this.neighborhoods = res; 
+        if (searchTerm && searchTerm.trim() !== '') {
+          this.neighborhoods = this.allNeighborhoods.filter(barrio =>
+            barrio.name.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+        } else {
+          this.neighborhoods = res; 
+        }
+        this.isLoadingNeighborhoods = false;
+      },
+      error: (err) => {
+        console.error('Error cargando barrios', err);
+        this.isLoadingNeighborhoods = false;
       }
-      
-      this.isLoadingNeighborhoods = false;
-    },
-    error: (err) => {
-      console.error('Error cargando barrios desde el CrudService', err);
-      this.isLoadingNeighborhoods = false;
-    }
-  });
-}
+    });
+  }
 
   onSearch(term: string): void {
     this.loadNeighborhoods(term);
@@ -98,14 +92,13 @@ export class TerritorialManagementComponent implements OnInit, OnDestroy {
 
   onSelectNeighborhood(neighborhood: Neighborhood): void {
     this.selectedNeighborhood = neighborhood;
-    this.mapService.clearMap(); // Limpiamos el mapa al cambiar de barrio
+    this.mapService.clearMap(); 
     
-    // Verificamos si el barrio ya tiene puntos (polígono) guardados en BD
     this.pointService.getPoints({ id_neighborhood: neighborhood.id_neighborhood }).subscribe({
       next: (points) => {
         if (points && points.length > 0) {
-          // Adaptamos el modelo de base de datos al modelo del mapa y lo dibujamos
           const draftPoints: DraftPoint[] = points.map(p => ({
+            id_point: (p as any).id_point || (p as any).id, 
             latitude: p.latitude,
             longitude: p.longitude,
             order: p.order,
@@ -120,13 +113,46 @@ export class TerritorialManagementComponent implements OnInit, OnDestroy {
   // --- LÓGICA DE LAS HERRAMIENTAS DE DEMARCACIÓN ---
 
   onModeChange(mode: 'add' | 'edit'): void {
-    // Si Leaflet requiriera configuraciones extra según el modo, se llamarían aquí
-    // Por ahora, nuestro MapService permite agregar clics y arrastrar marcadores por defecto.
     console.log('Modo cambiado a:', mode);
   }
 
+  /**
+   * REQUERIMIENTO DE LIMPIEZA MASIVA: Elimina todo el polígono actual del backend y resetea el mapa
+   */
   onClearPoints(): void {
-    this.mapService.clearMap();
+    if (!this.selectedNeighborhood) {
+      alert('Debe seleccionar un barrio primero.');
+      return;
+    }
+
+    const pointsWithBackendId = this.currentPoints.filter(p => (p as any).id_point);
+
+    if (pointsWithBackendId.length === 0) {
+      this.mapService.clearMap();
+      return;
+    }
+
+    if (confirm(`¿Está seguro de que desea eliminar permanentemente TODO el polígono de "${this.selectedNeighborhood.name}" de la base de datos?`)) {
+      this.isSaving = true;
+
+      const deleteRequests = pointsWithBackendId.map(p => {
+        const backendId = (p as any).id_point;
+        return this.pointService.deletePoint(backendId);
+      });
+
+      forkJoin(deleteRequests).subscribe({
+        next: () => {
+          this.mapService.clearMap(); 
+          this.isSaving = false;
+          alert('¡Polígono eliminado por completo del servidor y del mapa!');
+        },
+        error: (err) => {
+          console.error('Error al ejecutar la limpieza masiva en servidor:', err);
+          alert('Ocurrió un error al intentar eliminar el polígono del servidor.');
+          this.isSaving = false;
+        }
+      });
+    }
   }
 
   onCancel(): void {
@@ -134,6 +160,34 @@ export class TerritorialManagementComponent implements OnInit, OnDestroy {
     this.selectedNeighborhood = null;
   }
 
+  /**
+   * BORRADO UNITARIO REAL: Elimina del backend (si ya existía) y quita del lienzo del mapa
+   */
+  onDeletePoint(index: number): void {
+    const pointToDelete = this.currentPoints[index];
+
+    if (pointToDelete) {
+      const backendId = (pointToDelete as any).id_point;
+
+      if (backendId) {
+        this.pointService.deletePoint(backendId).subscribe({
+          next: () => {
+            this.mapService.deletePointByIndex(index);
+          },
+          error: (err) => {
+            console.error('Error al intentar borrar el punto del servidor:', err);
+            alert('No se pudo eliminar el punto del servidor. Inténtalo de nuevo.');
+          }
+        });
+      } else {
+        this.mapService.deletePointByIndex(index);
+      }
+    }
+  }
+
+  /**
+   * GUARDA EL POLÍGONO DISTINGUIENDO ENTRE NUEVOS (POST) Y EXISTENTES (PUT)
+   */
   onSavePolygon(points: DraftPoint[]): void {
     if (!this.selectedNeighborhood) {
       alert('Debe seleccionar un barrio primero.');
@@ -142,9 +196,6 @@ export class TerritorialManagementComponent implements OnInit, OnDestroy {
 
     this.isSaving = true;
 
-    // Preparamos los DTOs para enviar al backend
-    // NOTA: Como en tu API se guarda punto por punto, usaremos forkJoin para enviar
-    // todas las peticiones POST en paralelo y esperar a que terminen.
     const requests = points.map(p => {
       const payload: PointRequestDto = {
         id_neighborhood: this.selectedNeighborhood!.id_neighborhood,
@@ -153,20 +204,29 @@ export class TerritorialManagementComponent implements OnInit, OnDestroy {
         order: p.order,
         point_type: p.point_type || 'boundary'
       };
-      return this.pointService.createPoint(payload);
+
+      // 🌟 CAMBIO CLAVE AQUÍ: Verificamos si el punto ya existe en la BD
+      const backendId = (p as any).id_point;
+
+      if (backendId) {
+        // Si tiene ID, significa que se movió o reordenó -> Hacemos PUT (HU-10)
+        return this.pointService.updatePoint(backendId, payload);
+      } else {
+        // Si NO tiene ID, significa que es un punto recién cliqueado -> Hacemos POST
+        return this.pointService.createPoint(payload);
+      }
     });
 
-    // ATENCIÓN: Si vas a editar (HU-10), aquí primero deberías eliminar los puntos
-    // anteriores de ese barrio antes de guardar los nuevos. Para la HU-09 (creación pura), esto basta:
     forkJoin(requests).subscribe({
-      next: (responses) => {
-        alert(`¡Polígono guardado exitosamente para el barrio ${this.selectedNeighborhood!.name}!`);
+      next: () => {
+        alert(`¡Polígono actualizado con éxito para el barrio ${this.selectedNeighborhood!.name}!`);
         this.isSaving = false;
-        // Opcional: recargar los puntos desde el servidor para confirmar
+        // Refrescamos para mapear los nuevos IDs generados por el backend a la interfaz
+        this.onSelectNeighborhood(this.selectedNeighborhood!);
       },
       error: (err: any) => {
-        console.error('Error guardando polígono', err);
-        alert('Ocurrió un error al guardar las coordenadas.');
+        console.error('Error guardando o editando polígono', err);
+        alert('Ocurrió un error al procesar los cambios en las coordenadas.');
         this.isSaving = false;
       }
     });
