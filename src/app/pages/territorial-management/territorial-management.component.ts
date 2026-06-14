@@ -91,24 +91,45 @@ export class TerritorialManagementComponent implements OnInit, OnDestroy {
   }
 
   onSelectNeighborhood(neighborhood: Neighborhood): void {
-    this.selectedNeighborhood = neighborhood;
-    this.mapService.clearMap(); 
-    
-    this.pointService.getPoints({ id_neighborhood: neighborhood.id_neighborhood }).subscribe({
-      next: (points) => {
-        if (points && points.length > 0) {
-          const draftPoints: DraftPoint[] = points.map(p => ({
-            id_point: (p as any).id_point || (p as any).id, 
-            latitude: p.latitude,
-            longitude: p.longitude,
-            order: p.order,
-            point_type: p.point_type
-          }));
-          this.mapService.loadExistingPolygon(draftPoints);
-        }
+  console.log('Barrio seleccionado:', neighborhood);
+
+  this.selectedNeighborhood = neighborhood;
+  this.mapService.clearMap();
+
+  this.pointService.searchPoints({
+    id_neighborhood: neighborhood.id_neighborhood
+  }).subscribe({
+    next: (response) => {
+
+      const points = response.items;
+
+      console.log(
+        `Puntos encontrados para el barrio ${neighborhood.id_neighborhood}:`,
+        points
+      );
+
+      if (points && points.length > 0) {
+
+        const draftPoints: DraftPoint[] = points.map(p => ({
+          id_point: p.id_point,
+          latitude: p.latitude,
+          longitude: p.longitude,
+          order: p.order,
+          point_type: p.point_type
+        }));
+
+        this.mapService.loadExistingPolygon(draftPoints);
       }
-    });
-  }
+
+    },
+    error: (err) => {
+      console.error(
+        `Error cargando puntos del barrio ${neighborhood.id_neighborhood}`,
+        err
+      );
+    }
+  });
+}
 
   // --- LÓGICA DE LAS HERRAMIENTAS DE DEMARCACIÓN ---
 
