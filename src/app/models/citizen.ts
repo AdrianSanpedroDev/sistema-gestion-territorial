@@ -5,6 +5,8 @@ export interface Citizen {
   email: string;
   phone: string;
   address: string;
+  latitude?: number;
+  longitude?: number;
   status: string;
   created_at: string;
   updated_at: string;
@@ -16,6 +18,8 @@ export interface CitizenRequestDto {
   email: string;
   phone: string;
   address: string;
+  latitude?: number;
+  longitude?: number;
   status: string;
 }
 

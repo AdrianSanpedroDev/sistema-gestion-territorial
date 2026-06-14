@@ -47,6 +47,7 @@ memory/
 
 # Contexto del proyecto (uso personal)
 CONTEXTO_PROYECTO.md
+CLAUDE.md
 mockups/
 
 venv/
