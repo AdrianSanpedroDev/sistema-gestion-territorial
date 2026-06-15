@@ -63,6 +63,10 @@ export const routes: Routes = [
         loadChildren: () => import('./pages/official/official.routes').then((m) => m.OfficialRoutes),
       },
       {
+        path: 'annotations',
+        loadChildren: () => import('./pages/annotation/annotation.routes').then((m) => m.AnnotationRoutes),
+      },
+      {
         path: 'gestion-territorial',
         loadChildren: () => 
           import('./pages/territorial-management/territorial-management.routes')

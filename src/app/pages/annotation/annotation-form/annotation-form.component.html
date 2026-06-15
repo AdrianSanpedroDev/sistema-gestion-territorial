@@ -1,0 +1,242 @@
+<div class="flex flex-col min-h-screen bg-gray-50">
+
+  <!-- Encabezado de página -->
+  <div class="px-6 py-4 bg-white border-b shadow-sm">
+    <h1 class="text-2xl font-bold text-gray-800">
+      {{ isEditMode ? 'Editar anotación' : 'Crear anotación' }}
+    </h1>
+    <p class="text-sm text-gray-500 mt-1">
+      Haz clic en el mapa para agregar una anotación en el territorio.
+    </p>
+  </div>
+
+  <!-- Cuerpo: mapa izquierda + panel derecha -->
+  <div class="flex flex-1">
+
+    <!-- Mapa -->
+    <div class="flex-1">
+      <app-map-picker
+        [initialLatitude]="initialLatitude"
+        [initialLongitude]="initialLongitude"
+        [polygon]="polygonCoords"
+        (locationSelected)="onLocationSelected($event)">
+      </app-map-picker>
+    </div>
+
+    <!-- Panel del formulario -->
+    <div class="w-96 bg-white border-l shadow-lg overflow-y-auto flex flex-col">
+      <div class="p-6 flex-1">
+
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold text-gray-800">Nueva anotación</h2>
+          <button type="button" (click)="cancel()"
+            class="text-gray-400 hover:text-gray-600 text-xl font-bold">✕</button>
+        </div>
+
+        <p class="text-xs text-gray-500 mb-6">Los campos con <span class="text-red-500">*</span> son obligatorios.</p>
+
+        <form [formGroup]="form" (ngSubmit)="save()" class="space-y-5">
+
+          <!-- 1. Ubicación (se llena desde el mapa) -->
+          <div>
+            <h3 class="font-semibold text-gray-700 mb-2">1. Ubicación</h3>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs text-gray-500">Latitud <span class="text-red-500">*</span></label>
+                <input formControlName="latitude" type="number" readonly
+                  class="w-full mt-1 px-3 py-2 border rounded-lg bg-gray-50 text-sm text-gray-700">
+              </div>
+              <div>
+                <label class="text-xs text-gray-500">Longitud <span class="text-red-500">*</span></label>
+                <input formControlName="longitude" type="number" readonly
+                  class="w-full mt-1 px-3 py-2 border rounded-lg bg-gray-50 text-sm text-gray-700">
+              </div>
+            </div>
+            <p *ngIf="form.get('latitude')?.invalid && form.get('latitude')?.touched"
+              class="text-red-500 text-xs mt-1">Selecciona un punto en el mapa.</p>
+          </div>
+
+          <!-- 2. Descripción -->
+          <div>
+            <h3 class="font-semibold text-gray-700 mb-2">2. Descripción</h3>
+            <textarea formControlName="description" rows="4"
+              placeholder="Describe la situación o hallazgo..."
+              class="w-full px-3 py-2 border rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </textarea>
+            <div class="flex justify-between mt-1">
+              <p *ngIf="form.get('description')?.invalid && form.get('description')?.touched"
+                class="text-red-500 text-xs">La descripción es obligatoria.</p>
+              <p class="text-xs text-gray-400 ml-auto">
+                {{ form.get('description')?.value?.length ?? 0 }}/500
+              </p>
+            </div>
+          </div>
+
+          <!-- 3. Ciudadano -->
+          <div>
+            <h3 class="font-semibold text-gray-700 mb-2">3. Ciudadano <span class="text-red-500">*</span></h3>
+            <select formControlName="id_citizen"
+              class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option [ngValue]="null" disabled>Selecciona un ciudadano...</option>
+              <option *ngFor="let c of citizens" [ngValue]="c.id_citizen">{{ c.name }}</option>
+            </select>
+            <p *ngIf="form.get('id_citizen')?.invalid && form.get('id_citizen')?.touched"
+              class="text-red-500 text-xs mt-1">Selecciona un ciudadano.</p>
+          </div>
+
+          <!-- 4. Barrio (opcional) -->
+          <div>
+            <h3 class="font-semibold text-gray-700 mb-2">4. Barrio <span class="text-gray-400 text-xs font-normal">(opcional)</span></h3>
+            <select formControlName="id_neighborhood"
+              class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option [ngValue]="null">Sin barrio</option>
+              <option *ngFor="let n of neighborhoods" [ngValue]="n.id_neighborhood">{{ n.name }}</option>
+            </select>
+          </div>
+
+          <!-- 5. Estado -->
+          <div>
+            <h3 class="font-semibold text-gray-700 mb-2">5. Estado <span class="text-red-500">*</span></h3>
+            <select formControlName="status"
+              class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="active">Activa</option>
+              <option value="pending">Pendiente</option>
+              <option value="resolved">Resuelta</option>
+              <option value="inactive">Inactiva</option>
+            </select>
+          </div>
+
+          <!-- 6. Categorías -->
+          <div>
+            <h3 class="font-semibold text-gray-700 mb-3">
+              6. Categorías <span class="text-red-500">*</span>
+            </h3>
+
+            <div *ngIf="allCategories.length === 0" class="text-xs text-gray-400">
+              Cargando categorías...
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+              <button
+                *ngFor="let cat of allCategories"
+                type="button"
+                (click)="toggleCategory(cat)"
+                [class]="isCategorySelected(cat)
+                  ? 'flex flex-col items-center p-2 rounded-lg border-2 border-blue-500 bg-blue-50 text-blue-700 text-xs text-center transition-all'
+                  : 'flex flex-col items-center p-2 rounded-lg border-2 border-gray-200 bg-white text-gray-600 text-xs text-center hover:border-gray-300 transition-all'">
+
+                <img *ngIf="cat.image_url"
+                  [src]="'http://127.0.0.1:5000' + cat.image_url"
+                  [alt]="cat.name"
+                  class="w-8 h-8 object-contain mb-1">
+
+                <span *ngIf="!cat.image_url"
+                  class="w-8 h-8 mb-1 flex items-center justify-center text-lg">📌</span>
+
+                <span class="leading-tight">{{ cat.name }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 7. Entidades de interés -->
+          <div>
+            <h3 class="font-semibold text-gray-700 mb-3">
+              7. Entidades de interés <span class="text-red-500">*</span>
+            </h3>
+            <p class="text-xs text-gray-500 mb-2">
+              Selecciona las entidades a las que puede interesar esta anotación.
+            </p>
+
+            <div *ngIf="allEntities.length === 0" class="text-xs text-gray-400">
+              Cargando entidades...
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+              <button
+                *ngFor="let entity of allEntities"
+                type="button"
+                (click)="toggleEntity(entity)"
+                [class]="isEntitySelected(entity)
+                  ? 'px-3 py-1.5 rounded-full border-2 border-blue-500 bg-blue-50 text-blue-700 text-xs font-medium transition-all'
+                  : 'px-3 py-1.5 rounded-full border-2 border-gray-200 bg-white text-gray-600 text-xs font-medium hover:border-gray-300 transition-all'">
+                {{ entity.name }}
+              </button>
+            </div>
+          </div>
+
+          <!-- 8. Fotografías -->
+          <div>
+            <h3 class="font-semibold text-gray-700 mb-3">
+              8. Fotografías <span class="text-gray-400 text-xs font-normal">(máx. 5)</span>
+            </h3>
+
+            <!-- Fotos ya subidas (modo editar) -->
+            <div *ngIf="existingEvidences.length > 0" class="flex flex-wrap gap-2 mb-3">
+              <div *ngFor="let ev of existingEvidences"
+                class="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200">
+                <img
+                  [src]="'http://127.0.0.1:5000/api/images/' + ev.file_url"
+                  [alt]="ev.file_url"
+                  class="w-full h-full object-cover">
+                <button
+                  type="button"
+                  (click)="removeEvidence(ev.id_evidence)"
+                  class="absolute top-0 right-0 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-bl-lg">
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <!-- Archivos nuevos seleccionados (aún no subidos) -->
+            <div *ngIf="selectedFiles.length > 0" class="flex flex-wrap gap-2 mb-3">
+              <div *ngFor="let file of selectedFiles; let i = index"
+                class="flex items-center gap-1 px-2 py-1 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700">
+                <span class="truncate max-w-24">{{ file.name }}</span>
+                <button type="button" (click)="removeFile(i)"
+                  class="text-blue-400 hover:text-red-500 font-bold ml-1">✕</button>
+              </div>
+            </div>
+
+            <!-- Input de selección -->
+            <label
+              class="flex flex-col items-center justify-center w-full py-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-400 mb-1" fill="none"
+                viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              <span class="text-xs text-gray-500">Arrastra y suelta imágenes aquí</span>
+              <span class="text-xs text-blue-500 mt-1">o haz clic para seleccionar</span>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                class="hidden"
+                (change)="onFilesSelected($event)">
+            </label>
+
+            <p class="text-xs text-gray-400 mt-1 text-right">
+              {{ existingEvidences.length + selectedFiles.length }}/5 fotos
+            </p>
+          </div>
+
+
+          <!-- Botones -->
+          <div class="flex gap-3 pt-4 border-t">
+            <button type="button" (click)="cancel()"
+              class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">
+              Cancelar
+            </button>
+            <button type="submit"
+              class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+              [disabled]="form.invalid">
+              Guardar anotación
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>

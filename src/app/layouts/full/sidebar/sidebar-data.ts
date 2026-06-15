@@ -30,6 +30,11 @@ export const navItems: NavItem[] = [
     route: '/citizens',
   },
   {
+    displayName: 'Anotaciones',
+    iconName: 'solar:notes-line-duotone',
+    route: '/annotations',
+  },
+  {
     displayName: 'Categorías',
     iconName: 'solar:tag-line-duotone',
     route: '/categories',
