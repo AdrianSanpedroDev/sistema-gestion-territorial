@@ -36,6 +36,7 @@ export interface OfficialLocationUpdate {
   latitude: number;
   longitude: number;
   last_gps_update: string; // Formato ISO 8601 (ej. "2026-05-27T14:00:00")
+  name:string
 }
 
 // Representa el payload completo que llega en el evento 'official_tracking'
