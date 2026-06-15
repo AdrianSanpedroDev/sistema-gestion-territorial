@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import Swal from 'sweetalert2';
 
-import { catchError, forkJoin, of } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
 
 import { AnnotationService } from '../../../services/annotation.service';
 import { CategoryService } from '../../../services/category.service';
@@ -180,17 +180,7 @@ export class AnnotationFormComponent implements OnInit {
     this.initialLatitude = coords.latitude;
     this.initialLongitude = coords.longitude;
 
-    this.neighborhoodService.findByCoordinates(coords.latitude, coords.longitude)
-      .pipe(catchError(() => of(null)))
-      .subscribe((neighborhood) => {
-        if (neighborhood && neighborhood.id_neighborhood) {
-          this.form.patchValue({ id_neighborhood: neighborhood.id_neighborhood });
-          this.polygonCoords = this.neighborhoodPolygons.get(neighborhood.id_neighborhood) ?? [];
-          return;
-        }
-
-        this.detectNeighborhoodLocally(coords);
-      });
+    this.detectNeighborhoodLocally(coords);
   }
 
   private detectNeighborhoodLocally(coords: Coordinates): void {
