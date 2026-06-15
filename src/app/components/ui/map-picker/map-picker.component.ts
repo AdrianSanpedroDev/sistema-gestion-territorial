@@ -51,8 +51,9 @@ export class MapPickerComponent implements AfterViewInit, OnChanges, OnDestroy {
   }
 
   private initMap(): void {
-    const lat = this.initialLatitude ?? 4.7110;
-    const lng = this.initialLongitude ?? -74.0721;
+    const lat = this.initialLatitude ?? 5.0703;
+    const lng = this.initialLongitude ?? -75.5138;
+
     const zoom = this.initialLatitude ? 15 : 12;
 
     this.map = L.map(this.mapContainer.nativeElement).setView([lat, lng], zoom);

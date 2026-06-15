@@ -3,9 +3,14 @@ import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
+import { forkJoin } from 'rxjs';
 
 import { AnnotationService } from '../../services/annotation.service';
+import { CitizenService } from '../../services/citizen.service';
+import { NeighborhoodService } from '../../services/neighborhood.service';
 import { Annotation } from '../../models/annotation';
+import { Citizen } from '../../models/citizen';
+import { Neighborhood } from '../../models/neighborhood';
 import { ColumnDef } from '../../models/component-dynamic-table/column-def';
 import { ActionButton } from '../../models/component-dynamic-table/action-button';
 import { TablePageEvent } from '../../models/component-dynamic-table/table-page-event';
@@ -20,10 +25,14 @@ import { DynamicTableComponent } from '../../components/ui/table/dynamic-table/d
   templateUrl: './annotation.component.html',
 })
 export class AnnotationComponent implements OnInit {
-  private annotationService = inject(AnnotationService);
-  private router = inject(Router);
+  private annotationService   = inject(AnnotationService);
+  private citizenService      = inject(CitizenService);
+  private neighborhoodService = inject(NeighborhoodService);
+  private router              = inject(Router);
 
-  annotations: Annotation[] = [];
+  annotations:  Annotation[]   = [];
+  private citizens:      Citizen[]      = [];
+  private neighborhoods: Neighborhood[] = [];
   page = 1;
   pageSize = 5;
   totalItems = 0;
@@ -44,7 +53,17 @@ export class AnnotationComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.loadData();
+    forkJoin({
+      citizens:      this.citizenService.getAll(),
+      neighborhoods: this.neighborhoodService.getAll(),
+    }).subscribe({
+      next: ({ citizens, neighborhoods }) => {
+        this.citizens      = citizens;
+        this.neighborhoods = neighborhoods;
+        this.loadData();
+      },
+      error: () => this.loadData(),
+    });
   }
 
   loadData(): void {
@@ -55,7 +74,13 @@ export class AnnotationComponent implements OnInit {
 
     request$.subscribe({
       next: (res) => {
-        this.annotations = res.items;
+        this.annotations = res.items.map((a) => ({
+          ...a,
+          citizen_name:      this.citizens.find((c) => c.id_citizen === a.id_citizen)?.name ?? '',
+          neighborhood_name: a.id_neighborhood
+            ? (this.neighborhoods.find((n) => n.id_neighborhood === a.id_neighborhood)?.name ?? '')
+            : 'Sin barrio',
+        }));
         this.totalItems = res.totalItems;
         this.loading = false;
       },

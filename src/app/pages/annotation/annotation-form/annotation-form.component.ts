@@ -45,7 +45,8 @@ export class AnnotationFormComponent implements OnInit {
 
   citizens:      Citizen[]      = [];
   neighborhoods: Neighborhood[] = [];
-  polygonCoords: Coordinates[]  = [];
+  polygonCoords:        Coordinates[]                    = [];
+  neighborhoodPolygons = new Map<number, Coordinates[]>();
 
   initialLatitude?:  number;
   initialLongitude?: number;
@@ -71,12 +72,13 @@ export class AnnotationFormComponent implements OnInit {
     longitude:       [null as number | null, Validators.required],
   });
 
-  ngOnInit(): void {
-    this.form.get('id_neighborhood')!.valueChanges.subscribe((id) => {
-      this.polygonCoords = [];
-      if (id) this.loadPolygon(Number(id));
-    });
+  get detectedNeighborhoodName(): string {
+    const id = this.form.get('id_neighborhood')?.value;
+    if (!id) return '';
+    return this.neighborhoods.find((n) => n.id_neighborhood === id)?.name ?? '';
+  }
 
+  ngOnInit(): void {
     const idParam = this.route.snapshot.paramMap.get('id');
     this.isEditMode = !!idParam;
     if (this.isEditMode) {
@@ -88,7 +90,7 @@ export class AnnotationFormComponent implements OnInit {
     this.loadNeighborhoods();
     this.loadCategories();
     this.loadEntities();
-
+    this.loadAllPolygons();
   }
 
   private loadAnnotation(): void {
@@ -141,24 +143,61 @@ export class AnnotationFormComponent implements OnInit {
     });
   }
 
-  private loadPolygon(neighborhoodId: number): void {
-    this.pointService.getPoints({ id_neighborhood: neighborhoodId }).subscribe({
-      next: (points) => {
-        this.polygonCoords = points
-          .sort((a, b) => a.order - b.order)
-          .map((p) => ({ latitude: p.latitude, longitude: p.longitude }));
+  private loadAllPolygons(): void {
+    this.pointService.searchPoints({}).subscribe({
+      next: (response) => {
+        const grouped = new Map<number, { lat: number; lng: number; order: number }[]>();
+        for (const pt of response.items) {
+          if (pt.id_neighborhood == null) continue;
+          if (!grouped.has(pt.id_neighborhood)) grouped.set(pt.id_neighborhood, []);
+          grouped.get(pt.id_neighborhood)!.push({ lat: pt.latitude, lng: pt.longitude, order: pt.order });
+        }
+        for (const [nbId, pts] of grouped) {
+          this.neighborhoodPolygons.set(nbId,
+            pts.sort((a, b) => a.order - b.order)
+               .map((p) => ({ latitude: p.lat, longitude: p.lng }))
+          );
+        }
       },
       error: () => {},
     });
   }
 
+  private loadPolygon(neighborhoodId: number): void {
+  this.pointService.searchPoints({ id_neighborhood: neighborhoodId }).subscribe({
+    next: (response) => {
+      this.polygonCoords = response.items
+        .sort((a, b) => a.order - b.order)
+        .map((p) => ({ latitude: p.latitude, longitude: p.longitude }));
+    },
+    error: () => {},
+  });
+}
+
+
   onLocationSelected(coords: Coordinates): void {
     this.form.patchValue({ latitude: coords.latitude, longitude: coords.longitude });
-    if (this.polygonCoords.length && !this.isPointInPolygon(coords, this.polygonCoords)) {
+
+    let foundId: number | null = null;
+    let foundPoly: Coordinates[] = [];
+
+    for (const nb of this.neighborhoods) {
+      const poly = this.neighborhoodPolygons.get(nb.id_neighborhood);
+      if (poly && poly.length >= 3 && this.isPointInPolygon(coords, poly)) {
+        foundId = nb.id_neighborhood;
+        foundPoly = poly;
+        break;
+      }
+    }
+
+    this.form.patchValue({ id_neighborhood: foundId });
+    this.polygonCoords = foundPoly;
+
+    if (!foundId) {
       Swal.fire({
         icon: 'warning',
-        title: 'Fuera del barrio',
-        text: 'La ubicación seleccionada está fuera del polígono del barrio seleccionado.',
+        title: 'Fuera de un barrio',
+        text: 'El punto está fuera de cualquier barrio demarcado. La anotación se guardará sin barrio asociado.',
       });
     }
   }

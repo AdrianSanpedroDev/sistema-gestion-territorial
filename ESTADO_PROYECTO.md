@@ -1,7 +1,7 @@
 # Estado del Proyecto — Sistema de Gestión Territorial
 
 > Documento de seguimiento del equipo frontend. Se actualiza a medida que se completan casos de uso.
-> Última actualización: 2026-06-14 — CU-03 completado con MapPickerComponent + layout de página completa + fix CSS Leaflet
+> Última actualización: 2026-06-15 — Módulo 3 completo (CU-09/10/11 Nico · CU-12 Adrián)
 
 ---
 
@@ -17,10 +17,10 @@
 | Administración | CU-06 | Gestión de Barrios | ✅ Completado | Nico |
 | Autenticación | CU-07 | Login OAuth (Google / GitHub) | ✅ Completado | Adrián |
 | Autenticación | CU-08 | Logout | ✅ Completado | Adrián |
-| Mapa | CU-09 | Demarcar polígono de barrio | ⬜ Pendiente | — |
-| Mapa | CU-10 | Editar polígono | ⬜ Pendiente | — |
-| Mapa | CU-11 | Tracking en tiempo real | ⬜ Pendiente | — |
-| Anotaciones | CU-12 | Crear anotación | ⬜ Pendiente | — |
+| Mapa | CU-09 | Demarcar polígono de barrio | ✅ Completado | Nico |
+| Mapa | CU-10 | Editar polígono | ✅ Completado | Nico |
+| Mapa | CU-11 | Tracking en tiempo real | ✅ Completado | Nico |
+| Anotaciones | CU-12 | Crear anotación | ✅ Completado | Adrián |
 | Anotaciones | CU-13 | Calificar anotación | ⬜ Pendiente | — |
 | Anotaciones | CU-14 | Visualizar por categoría | ⬜ Pendiente | — |
 | Reportes | CU-15 | Reportes inteligentes (chat) | ⬜ Pendiente | — |
@@ -101,6 +101,38 @@
 - Foto de perfil real (Google/GitHub) con fallback a imagen por defecto
 - Nombre del usuario visible en el header
 
+### ✅ CU-09 — Demarcar polígono de barrio _(Nico, 2026-06-15)_
+- Página `/demarcation` con layout de tres paneles: sidebar de barrios (izquierda), mapa Leaflet (centro), herramientas de demarcación (derecha)
+- `MapService` (singleton `root`) gestiona el mapa Leaflet, los markers arrastrables y el polígono activo
+- `DemarcationToolsComponent`: modos "Agregar puntos", "Editar puntos" (drag) y "Limpiar"; muestra tabla de coordenadas en tiempo real
+- `NeighborhoodSidebarComponent`: lista de barrios con búsqueda; al seleccionar un barrio carga sus puntos desde `PointService.searchPoints({ id_neighborhood })`
+- Al guardar: crea/actualiza los puntos vía `PointService.createPoint` / `updatePoint` / `deletePoint`; polígono persistido como lista de `Point` ordenados por `order`
+- **Nota para CU-12:** el `MapService` de Nico es exclusivo de esta página (polígonos). CU-12 usa `MapPickerComponent` (punto único). No inyectar `MapService` en CU-12.
+
+### ✅ CU-10 — Editar polígono _(Nico, 2026-06-15)_
+- Integrado dentro de la misma página `/demarcation`
+- Modo "Editar puntos": cada marker es arrastrable; al soltar llama a `PointService.updatePoint(id, newCoords)` en tiempo real
+- Tabla de coordenadas actualiza coordenadas al arrastrar
+
+### ✅ CU-11 — Tracking en tiempo real _(Nico, 2026-06-15)_
+- Integrado en el mapa principal (página `/map`)
+- `socket.io-client` conectado al backend Flask-SocketIO
+- Escucha evento de posición de funcionarios; muestra markers actualizados en tiempo real sobre el mapa
+- Funcionarios con `gps_active = true` emiten su posición; el mapa la refleja sin recargar la página
+
+### ✅ CU-12 — Crear/Editar anotación _(Adrián, 2026-06-15)_
+- Modelo `Annotation` + interfaces de sub-recursos (`AnnotationCategory`, `Evidence`, `InterestedParty`) y DTOs en `src/app/models/annotation.ts`
+- `AnnotationService` extiende `CrudService<Annotation>`: métodos `createAnnotation`, `updateAnnotation`, `searchByFilter`; sub-recursos: `uploadEvidences` (FormData), `getEvidences`, `deleteEvidence`, `addCategory`, `removeCategory`, `getAnnotationCategories`, `addInterestedParty`, `removeInterestedParty`, `getInterestedParties`
+- Lista (`AnnotationComponent`): tabla paginada, búsqueda; ciudadano y barrio resueltos localmente con `forkJoin` + `CitizenService.getAll()` + `NeighborhoodService.getAll()` (el endpoint de lista no devuelve los nombres enriquecidos)
+- Formulario (`AnnotationFormComponent`): layout mapa izquierda + panel derecha; detecta modo crear/editar vía `ActivatedRoute`
+- **Auto-detección de barrio:** al hacer clic en el mapa, el sistema carga todos los polígonos con `PointService.searchPoints({})`, los agrupa por barrio en un `Map<id, Coordinates[]>` y aplica ray-casting (`isPointInPolygon`) para detectar automáticamente el barrio — el usuario no selecciona el barrio manualmente (CU-12 paso 4)
+- Flujo alternativo 4a: si el punto cae fuera de todos los barrios → SweetAlert2 warning + guarda sin barrio (`id_neighborhood = null`)
+- Categorías: chips con toggle; modo crear acumula IDs localmente y los guarda con `forkJoin` tras crear la anotación; modo editar llama al servicio en tiempo real
+- Entidades interesadas: mismo patrón que categorías
+- Evidencias: upload múltiple vía FormData (máx. 5 fotos); visualización y eliminación en modo editar
+- `MapPickerComponent` reutilizado (`app-map-picker`): centro por defecto en Manizales (`5.0703, -75.5138`); polígono del barrio detectado se muestra al hacer clic
+- Rutas: `/annotations` (lista) · `/annotations/new` · `/annotations/:id/edit` — registradas con lazy loading
+
 ---
 
 ### Infraestructura CRUD (base para CU-01 al CU-06)
@@ -121,9 +153,9 @@
 | `CrudService<T>` genérico | ✅ | `src/app/services/crud.service.ts` — base para CU-01 al CU-06 |
 | `PagedResponse<T>` | ✅ | `src/app/models/paged-response.ts` |
 | Endpoints backend confirmados | ✅ | entities, officials, citizens, categories, communes, neighborhoods |
-| Modelos territoriales (`models/`) | 🔄 | `entity.ts`, `official.ts`, `commune.ts`, `neighborhood.ts`, `citizen.ts`, `category.ts` ✅ — resto pendiente |
-| Servicios por recurso | 🔄 | `EntityService`, `OfficialService`, `CommuneService`, `NeighborhoodService`, `CitizenService`, `CategoryService` ✅ — resto pendiente |
-| Sidebar actualizado con módulos | 🔄 | Entidades, Funcionarios, Comunas, Barrios, Ciudadanos y Categorías ✅ — resto pendiente |
+| Modelos territoriales (`models/`) | ✅ | `entity.ts`, `official.ts`, `commune.ts`, `neighborhood.ts`, `citizen.ts`, `category.ts`, `annotation.ts`, `point.ts`, `coordinates.ts` |
+| Servicios por recurso | ✅ | `EntityService`, `OfficialService`, `CommuneService`, `NeighborhoodService`, `CitizenService`, `CategoryService`, `AnnotationService`, `PointService` |
+| Sidebar actualizado con módulos | ✅ | Todos los módulos registrados |
 | `DynamicTableComponent` extendido | ✅ | Soporta `rowClassFn` para estilos por fila y columnas tipo `image` |
 | Leaflet instalado (mapas) | ✅ | CSS en `angular.json`; `MapPickerComponent` reutilizable listo (`app-map-picker`) |
 
