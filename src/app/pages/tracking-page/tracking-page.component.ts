@@ -67,8 +67,8 @@ export class TrackingPageComponent implements OnInit, AfterViewInit, OnDestroy {
             id_official: off.id_official,
             latitude: off.last_latitude,
             longitude: off.last_longitude,
-            // Garantizar que sea string (no null) asignando un valor por defecto
-            last_gps_update: off.last_gps_update ?? new Date().toISOString()
+            last_gps_update: off.last_gps_update ?? new Date().toISOString(),
+            name: off.name // <-- Agrega esta línea para que coincida con el modelo actualizado
           }, off.name, off.gps_active);
         }
       });
@@ -82,9 +82,11 @@ export class TrackingPageComponent implements OnInit, AfterViewInit, OnDestroy {
       this.lastUpdateTime = new Date();
       
       payload.officials.forEach(update => {
-        // En un flujo real, quizás busquemos el nombre en un store, 
-        // aquí pasamos un placeholder o asumimos que ya existe.
-        this.updateOrAddMarker(update, 'Funcionario', true); 
+        // Extraemos el nombre que ya viene desde el socket (Python), 
+        // y si por alguna razón no viene, le ponemos un fallback.
+        const officialName = update.name || 'Funcionario'; 
+        
+        this.updateOrAddMarker(update, officialName, true); 
       });
     });
   }

@@ -40,3 +40,12 @@ export interface OfficialPaginatedResponseDto {
 export interface OfficialResponseMessageDto {
   message: string;
 }
+
+
+export interface OfficialLocationUpdate {
+  id_official: number;
+  latitude: number;
+  longitude: number;
+  last_gps_update: string;
+  name?: string; // <-- Agrega esta línea
+}
