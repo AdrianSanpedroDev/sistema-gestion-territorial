@@ -1,0 +1,166 @@
+<div class="annotation-map-layout">
+
+  <!-- ===================== MAPA ===================== -->
+  <main class="map-area">
+    <div #mapContainer class="map-container"></div>
+  </main>
+
+  <!-- ===================== PANEL LATERAL ===================== -->
+  <aside class="side-area">
+
+    <!-- ---------- Filtros (CU-14) ---------- -->
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title">Filtros de categorías</h2>
+          <p class="panel-subtitle">Filtra las anotaciones por categoría y subcategoría.</p>
+        </div>
+        <button type="button" class="link-btn" (click)="clearFilters()">Limpiar filtros</button>
+      </div>
+
+      <!-- F2: filtro por territorio combinado -->
+      <label class="field">
+        <span class="field-label">Barrio</span>
+        <select class="field-input"
+                [(ngModel)]="selectedNeighborhoodId"
+                (ngModelChange)="onNeighborhoodChange()">
+          <option [ngValue]="null">Todos</option>
+          <option *ngFor="let n of neighborhoods" [ngValue]="n.id_neighborhood">{{ n.name }}</option>
+        </select>
+      </label>
+
+      <p class="counter">{{ filteredAnnotations.length }} / {{ allAnnotations.length }} anotaciones visibles</p>
+
+      <p *ngIf="loadingAnnotations" class="muted">Cargando anotaciones y categorías...</p>
+      <p *ngIf="!loadingAnnotations && !allCategories.length" class="muted">No hay categorías disponibles.</p>
+
+      <ul class="category-tree">
+        <li *ngFor="let node of categoryTree" class="category-item">
+          <div class="category-row">
+            <label class="category-check">
+              <input type="checkbox"
+                     [checked]="isCategorySelected(node)"
+                     (change)="toggleCategorySelection(node)">
+              <span class="dot" [style.background]="categoryColor(node)"></span>
+              <span class="category-name">{{ node.name }}</span>
+              <span class="count">({{ node.count }})</span>
+            </label>
+            <button *ngIf="node.children.length"
+                    type="button" class="expand-btn"
+                    (click)="toggleCategoryExpand(node)">
+              {{ node.expanded ? '−' : '+' }}
+            </button>
+          </div>
+
+          <!-- 7a: categoría sin subcategorías -->
+          <p *ngIf="!node.children.length" class="no-sub">Sin subcategorías</p>
+
+          <ul *ngIf="node.expanded && node.children.length" class="subcategory-list">
+            <li *ngFor="let child of node.children">
+              <label class="category-check child">
+                <input type="checkbox"
+                       [checked]="isCategorySelected(child)"
+                       (change)="toggleCategorySelection(child)">
+                <span class="category-name">{{ child.name }}</span>
+                <span class="count">({{ child.count }})</span>
+              </label>
+            </li>
+          </ul>
+        </li>
+
+        <!-- Anotaciones sin ninguna categoría asociada -->
+        <li class="category-item">
+          <label class="category-check">
+            <input type="checkbox"
+                   [checked]="noCategorySelected"
+                   (change)="toggleNoCategory()">
+            <span class="dot" style="background:#475569"></span>
+            <span class="category-name">Sin categoría</span>
+            <span class="count">({{ uncategorizedCount }})</span>
+          </label>
+        </li>
+      </ul>
+
+      <!-- 6a: filtro sin resultados -->
+      <p *ngIf="noAnnotationResults && allAnnotations.length" class="alert">
+        No hay anotaciones para este filtro. Ajusta las categorías o el barrio.
+      </p>
+      <!-- 2a: no hay anotaciones registradas -->
+      <p *ngIf="!loadingAnnotations && !allAnnotations.length" class="alert">
+        Aún no hay anotaciones registradas en el sistema.
+      </p>
+    </section>
+
+    <!-- ---------- Detalle + Calificación (CU-13) ---------- -->
+    <section class="panel" *ngIf="selectedAnnotationDetail as detail">
+      <div class="panel-head">
+        <h2 class="panel-title">Detalle de la anotación</h2>
+        <button type="button" class="link-btn" (click)="closeDetail()">Cerrar</button>
+      </div>
+
+      <span class="badge">{{ detail.categoryLabel }}</span>
+      <p class="detail-desc">{{ detail.annotation.description }}</p>
+
+      <dl class="detail-grid">
+        <dt>Categoría</dt>
+        <dd>{{ detail.rootCategoryNames.join(', ') || 'Sin categoría' }}</dd>
+        <dt>Subcategoría</dt>
+        <dd>{{ detail.subCategoryNames.join(', ') || '—' }}</dd>
+        <dt>Fecha de registro</dt>
+        <dd>{{ detail.annotation.registration_date | date:'dd/MM/yyyy HH:mm' }}</dd>
+      </dl>
+
+      <!-- Evidencias -->
+      <h3 class="section-title">Evidencias ({{ detail.evidences.length }})</h3>
+      <p *ngIf="!detail.evidences.length" class="muted">No se encontraron evidencias.</p>
+      <div *ngIf="detail.evidences.length" class="evidence-grid">
+        <img *ngFor="let ev of detail.evidences"
+             [src]="evidenceUrl(ev)" [alt]="ev.file_url" class="evidence-img">
+      </div>
+
+      <!-- Calificación promedio + distribución -->
+      <h3 class="section-title">Calificación promedio</h3>
+      <div class="rating-summary">
+        <div class="avg">
+          <span class="avg-number">{{ averageRating | number:'1.1-1' }}</span>
+          <div class="avg-stars">
+            <span *ngFor="let s of [1,2,3,4,5]"
+                  class="star" [class.filled]="s <= roundedAverage">★</span>
+          </div>
+          <span class="muted">({{ totalVotes }} calificaciones)</span>
+        </div>
+        <div class="distribution">
+          <div *ngFor="let row of ratingDistribution" class="dist-row">
+            <span class="dist-label">{{ row.stars }} ★</span>
+            <div class="dist-bar"><div class="dist-fill" [style.width.%]="row.percentage"></div></div>
+            <span class="dist-count">{{ row.count }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tu calificación (solo ciudadano autenticado y registrado) -->
+      <div class="my-rating" *ngIf="canRate; else cannotRate">
+        <h3 class="section-title">Tu calificación</h3>
+        <div class="star-input">
+          <button type="button" *ngFor="let s of [1,2,3,4,5]"
+                  class="star-btn" [class.filled]="s <= myStars"
+                  (click)="setMyStars(s)" [attr.aria-label]="s + ' estrellas'">★</button>
+        </div>
+        <textarea class="field-input comment"
+                  [(ngModel)]="myComment" maxlength="500" rows="3"
+                  placeholder="Escribe tu comentario (opcional)..."></textarea>
+        <p *ngIf="alreadyVoted" class="muted">Ya calificaste esta anotación. Puedes editar tu calificación.</p>
+        <button type="button" class="primary-btn"
+                [disabled]="savingVote" (click)="submitRating()">
+          {{ savingVote ? 'Guardando...' : (alreadyVoted ? 'Actualizar calificación' : 'Enviar calificación') }}
+        </button>
+      </div>
+      <ng-template #cannotRate>
+        <p class="muted note">
+          Solo los ciudadanos registrados pueden calificar anotaciones.
+        </p>
+      </ng-template>
+    </section>
+
+  </aside>
+</div>

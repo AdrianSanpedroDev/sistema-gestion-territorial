@@ -1,7 +1,7 @@
 # Estado del Proyecto — Sistema de Gestión Territorial
 
 > Documento de seguimiento del equipo frontend. Se actualiza a medida que se completan casos de uso.
-> Última actualización: 2026-06-15 — Módulo 3 completo (CU-09/10/11 Nico · CU-12 Adrián)
+> Última actualización: 2026-06-15 — CU-13 y CU-14 completados (Adrián)
 
 ---
 
@@ -21,8 +21,8 @@
 | Mapa | CU-10 | Editar polígono | ✅ Completado | Nico |
 | Mapa | CU-11 | Tracking en tiempo real | ✅ Completado | Nico |
 | Anotaciones | CU-12 | Crear anotación | ✅ Completado | Adrián |
-| Anotaciones | CU-13 | Calificar anotación | ⬜ Pendiente | — |
-| Anotaciones | CU-14 | Visualizar por categoría | ⬜ Pendiente | — |
+| Anotaciones | CU-13 | Calificar anotación | ✅ Completado | Adrián |
+| Anotaciones | CU-14 | Visualizar por categoría | ✅ Completado | Adrián |
 | Reportes | CU-15 | Reportes inteligentes (chat) | ⬜ Pendiente | — |
 
 **Leyenda:** ✅ Completado · 🔄 En progreso · ⬜ Pendiente · ❌ Bloqueado
@@ -132,6 +132,24 @@
 - Evidencias: upload múltiple vía FormData (máx. 5 fotos); visualización y eliminación en modo editar
 - `MapPickerComponent` reutilizado (`app-map-picker`): centro por defecto en Manizales (`5.0703, -75.5138`); polígono del barrio detectado se muestra al hacer clic
 - Rutas: `/annotations` (lista) · `/annotations/new` · `/annotations/:id/edit` — registradas con lazy loading
+
+### ✅ CU-13 — Calificar anotación _(Adrián, 2026-06-15)_
+- Modelo `Vote` + DTOs `VoteRequestDto` (POST) y `VoteUpdateDto` (PUT) en `src/app/models/vote.ts`
+- `VoteService` extiende `CrudService<Vote>` (`resource = 'votes'`): `getByAnnotation` (promedio), `getByAnnotationAndCitizen` (¿ya votó?), `createVote`, `updateVote`
+- Integrado en el panel de detalle de `AnnotationMapComponent` (CU-14): estrellas 1–5 interactivas + comentario (máx. 500)
+- **Promedio y distribución por estrella** se calculan en frontend (el backend no los devuelve)
+- **id_citizen del votante**: se resuelve por match de email (`SecurityService.getCurrentUser()` → `CitizenService.getAll()`); solo el rol `ciudadano` registrado puede calificar
+- **Flujo alternativo 4a**: si el ciudadano ya votó (`existingVote`), se precargan estrellas/comentario y el guardado hace `PUT` en vez de `POST`
+- Errores con SweetAlert2 (`err.error.message`)
+
+### ✅ CU-14 — Visualizar anotaciones en el mapa por categoría _(Adrián, 2026-06-15)_
+- **Página propia** `AnnotationMapComponent` en ruta `/annotations-map`, con Leaflet autocontenido (`@ViewChild` + `LayerGroup`) — NO usa el `MapService` de polígonos de Nico (CU-09); sidebar con entrada "Mapa de anotaciones" separada de "Demarcación"
+- Carga con `forkJoin`: `getAll()` anotaciones + `getAllAnnotationCategories()` + categorías + barrios; normalización defensiva array/`{items}`
+- **Árbol jerárquico** de categorías/subcategorías con **conteo por nodo** (incluye descendientes); marcadores coloreados por categoría raíz
+- Filtros en tiempo real con checkboxes; **flujo 8a** (seleccionar padre incluye todas las subcategorías) vía `computeSelectedCategoryIds`; **7a** ("Sin subcategorías"); **F1** (limpiar); **F2** (filtro combinado por barrio); opción extra **"Sin categoría"**
+- Detalle al hacer clic en marcador: descripción, **categoría padre derivada del árbol** + subcategoría, evidencias, calificación promedio + distribución y fecha; mensajes **2a** (sin anotaciones) y **6a** (filtro sin resultados)
+- **Quirk del backend corregido** (centralizado en `AnnotationService.filterByAnnotation`): los endpoints sub-recurso (`evidences`, `annotation-categories`, `interested-parties`, `votes/search`) ignoran el filtro `?id_annotation` y devuelven todas las filas → se re-filtra en el cliente por `id_annotation`
+- **Limpieza**: `territorial-management` y su `MapService` se devolvieron a demarcación pura (se removieron los métodos de anotaciones que el commit anterior les había añadido)
 
 ---
 

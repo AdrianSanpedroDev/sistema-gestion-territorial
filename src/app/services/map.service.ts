@@ -10,11 +10,8 @@ export class MapService {
   private map!: L.Map;
   private polygonLayer!: L.Polygon;
   private markersLayer: L.LayerGroup = new L.LayerGroup();
-  private annotationLayer: L.LayerGroup = new L.LayerGroup();
   private currentCoordinates: L.LatLng[] = [];
   private coordinatesSubject = new Subject<DraftPoint[]>();
-  private pendingAnnotations: any[] = [];
-  private pendingAnnotationClick?: (item: any) => void;
 
   constructor() {
     this.fixMarkerIcons();
@@ -32,16 +29,9 @@ export class MapService {
     }).addTo(this.map);
 
     this.markersLayer.addTo(this.map);
-    this.annotationLayer.addTo(this.map);
     this.polygonLayer = L.polygon([], { color: '#3b82f6', weight: 3, fillOpacity: 0.15 }).addTo(this.map);
 
     this.map.on('click', (e: L.LeafletMouseEvent) => this.onMapClick(e));
-
-    if (this.pendingAnnotations.length) {
-      this.addAnnotationMarkers(this.pendingAnnotations, this.pendingAnnotationClick);
-      this.pendingAnnotations = [];
-      this.pendingAnnotationClick = undefined;
-    }
   }
 
   private onMapClick(e: L.LeafletMouseEvent): void {
@@ -96,45 +86,6 @@ export class MapService {
     });
 
     this.emitCoordinatesChange();
-  }
-
-  addAnnotationMarkers(annotations: any[], onMarkerClick?: (annotation: any) => void): void {
-    if (!this.map) {
-      this.pendingAnnotations = annotations;
-      this.pendingAnnotationClick = onMarkerClick;
-      return;
-    }
-
-    this.annotationLayer.clearLayers();
-
-    annotations.forEach((annotation) => {
-      const latlng = L.latLng(annotation.latitude, annotation.longitude);
-      const marker = L.marker(latlng, {
-        icon: L.divIcon({
-          className: 'annotation-marker',
-          html: `<span style="display:inline-block;width:18px;height:18px;border-radius:50%;background:${annotation.markerColor};border:2px solid white;box-shadow:0 0 4px rgba(0,0,0,0.25);"></span>`,
-          iconSize: [22, 22],
-          iconAnchor: [11, 11],
-        }),
-      });
-
-      const popupHtml = `
-        <div style="max-width:220px;line-height:1.4;font-size:14px;">
-          <strong>${annotation.description ?? 'Anotación'}</strong><br/>
-          <span style="color:#4a5568">${annotation.categoryLabel}</span><br/>
-          <small style="color:#718096">${annotation.registration_date ?? ''}</small><br/>
-          <div style="margin-top:6px;color:#2b6cb0;font-weight:600;">Haz clic para ver detalles</div>
-        </div>
-      `;
-
-      marker.bindPopup(popupHtml);
-      marker.on('click', () => onMarkerClick?.(annotation));
-      this.annotationLayer.addLayer(marker);
-    });
-  }
-
-  clearAnnotationMarkers(): void {
-    this.annotationLayer.clearLayers();
   }
 
   private emitCoordinatesChange(): void {

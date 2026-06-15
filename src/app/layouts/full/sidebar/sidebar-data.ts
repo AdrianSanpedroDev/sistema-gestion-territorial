@@ -50,8 +50,13 @@ export const navItems: NavItem[] = [
     route: '/officials',
   },
   {
-    displayName: 'Mapa',
-    iconName: 'solar:user-circle-line-duotone',
+    displayName: 'Mapa de anotaciones',
+    iconName: 'solar:map-point-line-duotone',
+    route: '/annotations-map',
+  },
+  {
+    displayName: 'Demarcación',
+    iconName: 'solar:map-line-duotone',
     route: '/gestion-territorial',
   },
   {

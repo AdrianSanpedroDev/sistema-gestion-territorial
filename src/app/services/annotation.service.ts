@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { CrudService } from './crud.service';
 import { environment } from '../../environments/environments';
 import { PagedResponse } from '../models/paged-response';
@@ -18,6 +18,17 @@ export class AnnotationService extends CrudService<Annotation> {
 
   private httpClient = inject(HttpClient);
   private apiUrl = environment.apiUrl;
+
+  // Quirk del backend: los endpoints sub-recurso ignoran el filtro ?id_annotation
+  // y devuelven TODAS las filas (a veces como array plano, a veces como { items }).
+  // Normalizamos a array y re-filtramos por anotación en el cliente.
+  private filterByAnnotation<T extends { id_annotation: number }>(
+    response: T[] | { items: T[] },
+    annotationId: number,
+  ): T[] {
+    const list = Array.isArray(response) ? response : response?.items ?? [];
+    return list.filter((item) => item.id_annotation === annotationId);
+  }
 
   createAnnotation(dto: AnnotationRequestDto): Observable<Annotation> {
     return this.httpClient.post<Annotation>(`${this.apiUrl}/${this.resource}`, dto);
@@ -46,7 +57,9 @@ export class AnnotationService extends CrudService<Annotation> {
 
   getEvidences(annotationId: number): Observable<Evidence[]> {
     const params = new HttpParams().set('id_annotation', String(annotationId));
-    return this.httpClient.get<Evidence[]>(`${this.apiUrl}/evidences`, { params });
+    return this.httpClient
+      .get<Evidence[] | { items: Evidence[] }>(`${this.apiUrl}/evidences`, { params })
+      .pipe(map((res) => this.filterByAnnotation(res, annotationId)));
   }
 
   deleteEvidence(id: number): Observable<void> {
@@ -68,7 +81,9 @@ export class AnnotationService extends CrudService<Annotation> {
 
   getAnnotationCategories(annotationId: number): Observable<AnnotationCategory[]> {
     const params = new HttpParams().set('id_annotation', String(annotationId));
-    return this.httpClient.get<AnnotationCategory[]>(`${this.apiUrl}/annotation-categories`, { params });
+    return this.httpClient
+      .get<AnnotationCategory[] | { items: AnnotationCategory[] }>(`${this.apiUrl}/annotation-categories`, { params })
+      .pipe(map((res) => this.filterByAnnotation(res, annotationId)));
   }
 
   getAllAnnotationCategories(): Observable<AnnotationCategory[]> {
@@ -90,6 +105,8 @@ export class AnnotationService extends CrudService<Annotation> {
 
   getInterestedParties(annotationId: number): Observable<InterestedParty[]> {
     const params = new HttpParams().set('id_annotation', String(annotationId));
-    return this.httpClient.get<InterestedParty[]>(`${this.apiUrl}/interested-parties`, { params });
+    return this.httpClient
+      .get<InterestedParty[] | { items: InterestedParty[] }>(`${this.apiUrl}/interested-parties`, { params })
+      .pipe(map((res) => this.filterByAnnotation(res, annotationId)));
   }
 }

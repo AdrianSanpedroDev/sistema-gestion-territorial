@@ -68,9 +68,15 @@ export const routes: Routes = [
       },
       {
         path: 'gestion-territorial',
-        loadChildren: () => 
+        loadChildren: () =>
           import('./pages/territorial-management/territorial-management.routes')
             .then((m) => m.TERRITORIAL_ROUTES),
+      },
+      {
+        path: 'annotations-map',
+        loadChildren: () =>
+          import('./pages/annotation-map/annotation-map.routes')
+            .then((m) => m.ANNOTATION_MAP_ROUTES),
       },
     ],
   },
