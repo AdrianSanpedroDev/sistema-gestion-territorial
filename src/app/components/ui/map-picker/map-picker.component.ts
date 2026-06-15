@@ -10,7 +10,7 @@ import { Coordinates } from '../../../models/coordinates';
   standalone: true,
   imports: [],
   templateUrl: './map-picker.component.html',
-  styleUrl: './map-picker.component.scss'
+  styleUrls: ['./map-picker.component.scss']
 })
 export class MapPickerComponent implements AfterViewInit, OnChanges, OnDestroy {
 

@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import Swal from 'sweetalert2';
 
-import { forkJoin, of } from 'rxjs';
+import { catchError, forkJoin, of } from 'rxjs';
 
 import { AnnotationService } from '../../../services/annotation.service';
 import { CategoryService } from '../../../services/category.service';
@@ -61,7 +61,7 @@ export class AnnotationFormComponent implements OnInit {
 
   selectedFiles:     File[]      = [];
   existingEvidences: Evidence[]  = [];
-
+  formSubmitted = false;
 
   form = this.fb.group({
     id_citizen:      [null as number | null, Validators.required],
@@ -177,7 +177,23 @@ export class AnnotationFormComponent implements OnInit {
 
   onLocationSelected(coords: Coordinates): void {
     this.form.patchValue({ latitude: coords.latitude, longitude: coords.longitude });
+    this.initialLatitude = coords.latitude;
+    this.initialLongitude = coords.longitude;
 
+    this.neighborhoodService.findByCoordinates(coords.latitude, coords.longitude)
+      .pipe(catchError(() => of(null)))
+      .subscribe((neighborhood) => {
+        if (neighborhood && neighborhood.id_neighborhood) {
+          this.form.patchValue({ id_neighborhood: neighborhood.id_neighborhood });
+          this.polygonCoords = this.neighborhoodPolygons.get(neighborhood.id_neighborhood) ?? [];
+          return;
+        }
+
+        this.detectNeighborhoodLocally(coords);
+      });
+  }
+
+  private detectNeighborhoodLocally(coords: Coordinates): void {
     let foundId: number | null = null;
     let foundPoly: Coordinates[] = [];
 
@@ -338,11 +354,32 @@ export class AnnotationFormComponent implements OnInit {
     });
   }
 
+  get categorySelectionValid(): boolean {
+    return this.isEditMode
+      ? this.selectedAnnotationCategories.length > 0
+      : this.selectedCategoryIds.length > 0;
+  }
 
+  get entitySelectionValid(): boolean {
+    return this.isEditMode
+      ? this.selectedInterestedParties.length > 0
+      : this.selectedEntityIds.length > 0;
+  }
 
   save(): void {
-    if (this.form.invalid) {
+    this.formSubmitted = true;
+
+    if (this.form.invalid || !this.categorySelectionValid || !this.entitySelectionValid) {
       this.form.markAllAsTouched();
+
+      if (!this.categorySelectionValid) {
+        Swal.fire({ icon: 'warning', title: 'Falta categoría', text: 'Selecciona al menos una categoría para la anotación.' });
+      }
+
+      if (!this.entitySelectionValid) {
+        Swal.fire({ icon: 'warning', title: 'Falta entidad', text: 'Selecciona al menos una entidad de interés para la anotación.' });
+      }
+
       return;
     }
     const dto: AnnotationRequestDto = {

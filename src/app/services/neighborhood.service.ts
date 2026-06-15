@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { catchError, Observable, of } from 'rxjs';
 import { CrudService } from './crud.service';
 import { Neighborhood, NeighborhoodRequestDto } from '../models/neighborhood';
 import { PagedResponse } from '../models/paged-response';

@@ -134,6 +134,10 @@
                 <span class="leading-tight">{{ cat.name }}</span>
               </button>
             </div>
+            <p *ngIf="formSubmitted && !categorySelectionValid"
+              class="text-red-500 text-xs mt-2">
+              Selecciona al menos una categoría para continuar.
+            </p>
           </div>
 
           <!-- 6. Entidades de interés -->
@@ -160,6 +164,10 @@
                 {{ entity.name }}
               </button>
             </div>
+            <p *ngIf="formSubmitted && !entitySelectionValid"
+              class="text-red-500 text-xs mt-2">
+              Selecciona al menos una entidad de interés para continuar.
+            </p>
           </div>
 
           <!-- 7. Fotografías -->
@@ -227,7 +235,7 @@
             </button>
             <button type="submit"
               class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
-              [disabled]="form.invalid">
+              [disabled]="form.invalid || !categorySelectionValid || !entitySelectionValid">
               Guardar anotación
             </button>
           </div>

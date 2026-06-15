@@ -17,8 +17,109 @@
     </app-map>
   </main>
 
-  <aside class="tools-area" *ngIf="selectedNeighborhood">
+  <aside class="tools-area">
+    <section class="filter-panel px-4 py-4 border-b">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="text-lg font-semibold">Filtros de categorías</h2>
+          <p class="text-sm text-gray-500">Filtra las anotaciones por categoría y subcategoría.</p>
+        </div>
+        <button type="button" class="text-sm text-blue-600 hover:underline" (click)="clearCategoryFilters()">
+          Limpiar filtros
+        </button>
+      </div>
+
+      <div class="text-sm text-gray-600 mb-3">
+        {{ filteredAnnotations.length }} / {{ allAnnotations.length }} anotaciones visibles
+      </div>
+
+      <div *ngIf="loadingAnnotations" class="text-sm text-gray-500 mb-3">
+        Cargando anotaciones y categorías...
+      </div>
+
+      <div *ngIf="!loadingAnnotations && !allCategories.length" class="text-sm text-gray-500 mb-3">
+        No hay categorías disponibles.
+      </div>
+
+      <div class="category-tree space-y-2">
+        <ng-container *ngFor="let node of categoryTree">
+          <div class="category-node flex items-start justify-between gap-2">
+            <button type="button"
+              class="category-node-label flex-1 text-left"
+              [class.selected]="isCategorySelected(node)"
+              (click)="toggleCategorySelection(node)">
+              <span class="font-semibold">{{ node.name }}</span>
+              <span class="text-gray-500">({{ node.count }})</span>
+            </button>
+            <button *ngIf="node.children.length > 0"
+              type="button"
+              class="category-expand text-gray-500 hover:text-gray-900"
+              (click)="toggleCategoryExpand(node)">
+              {{ node.expanded ? '−' : '+' }}
+            </button>
+          </div>
+          <div *ngIf="node.children.length === 0" class="text-xs text-gray-400 ml-2">
+            Sin subcategorías
+          </div>
+
+          <ul *ngIf="node.expanded" class="ml-4 mt-2 space-y-2">
+            <li *ngFor="let child of node.children">
+              <button type="button"
+                class="category-node-label child text-left"
+                [class.selected]="isCategorySelected(child)"
+                (click)="toggleCategorySelection(child)">
+                <span>{{ child.name }}</span>
+                <span class="text-gray-500">({{ child.count }})</span>
+              </button>
+            </li>
+          </ul>
+        </ng-container>
+      </div>
+
+      <div *ngIf="noAnnotationResults" class="mt-4 p-3 rounded-lg bg-yellow-50 text-yellow-800 text-sm">
+        No hay registros para este filtro. Ajusta las categorías o selecciona otro barrio.
+      </div>
+    </section>
+
+    <section *ngIf="selectedAnnotationDetail" class="annotation-detail px-4 py-4 border-b">
+      <h2 class="text-lg font-semibold mb-2">Detalle de la anotación</h2>
+      <p class="text-sm text-gray-500 mb-3">Haz clic en un marcador para ver el detalle completo.</p>
+
+      <div class="space-y-3">
+        <div>
+          <span class="font-semibold">Descripción:</span>
+          <p class="text-sm text-gray-700">{{ selectedAnnotationDetail.annotation.description }}</p>
+        </div>
+        <div>
+          <span class="font-semibold">Categorías:</span>
+          <p class="text-sm text-gray-700">{{ selectedAnnotationDetail.categoryNames.join(', ') || 'Sin categoría' }}</p>
+        </div>
+        <div>
+          <span class="font-semibold">Calificación promedio:</span>
+          <p class="text-sm text-gray-700">{{ selectedAnnotationDetail.rating }}</p>
+        </div>
+        <div>
+          <span class="font-semibold">Fecha:</span>
+          <p class="text-sm text-gray-700">{{ selectedAnnotationDetail.annotation.registration_date }}</p>
+        </div>
+        <div>
+          <span class="font-semibold">Evidencias:</span>
+          <div *ngIf="selectedAnnotationDetail.evidences.length === 0" class="text-sm text-gray-500">
+            No se encontraron evidencias.
+          </div>
+          <div *ngIf="selectedAnnotationDetail.evidences.length > 0" class="grid grid-cols-2 gap-2 mt-2">
+            <div *ngFor="let evidence of selectedAnnotationDetail.evidences" class="rounded overflow-hidden border border-gray-200">
+              <img [src]="'http://127.0.0.1:5000/api/images/' + evidence.file_url"
+                [alt]="evidence.file_url"
+                class="w-full h-20 object-cover">
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <app-demarcation-tools
+      *ngIf="selectedNeighborhood"
       [points]="currentPoints"
       [isSaving]="isSaving"
       [selectedNeighborhoodName]="selectedNeighborhood.name"

@@ -71,6 +71,10 @@ export class AnnotationService extends CrudService<Annotation> {
     return this.httpClient.get<AnnotationCategory[]>(`${this.apiUrl}/annotation-categories`, { params });
   }
 
+  getAllAnnotationCategories(): Observable<AnnotationCategory[]> {
+    return this.httpClient.get<AnnotationCategory[]>(`${this.apiUrl}/annotation-categories`);
+  }
+
   // --- Entidades interesadas ---
 
   addInterestedParty(annotationId: number, entityId: number): Observable<InterestedParty> {
