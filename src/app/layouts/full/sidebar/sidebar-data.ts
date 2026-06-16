@@ -16,12 +16,12 @@ export const navItems: NavItem[] = [
   },
   {
     displayName: 'Comunas',
-    iconName: 'solar:chart-2-line-duotone',
+    iconName: 'solar:city-line-duotone',
     route: '/communes',
   },
   {
     displayName: 'Barrios',
-    iconName: 'solar:chart-2-line-duotone',
+    iconName: 'solar:home-2-line-duotone',
     route: '/neighborhoods',
   },
   {
@@ -56,13 +56,12 @@ export const navItems: NavItem[] = [
   },
   {
     displayName: 'Demarcación',
-    iconName: 'solar:map-line-duotone',
+    iconName: 'solar:pen-new-square-line-duotone',
     route: '/gestion-territorial',
   },
   {
     displayName: 'Seguimiento',
-    iconName: 'solar:map-line-duotone',
-    route: '/tracking', 
+    iconName: 'solar:routing-line-duotone',
+    route: '/tracking',
   },
-
 ];

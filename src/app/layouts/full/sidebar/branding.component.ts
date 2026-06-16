@@ -5,20 +5,11 @@ import { CoreService } from 'src/app/services/core.service';
   selector: 'app-branding',
   imports: [],
   template: `
-    <a href="/" class="logodark">
-      <img
-        src="./assets/images/logos/dark-logo.svg"
-        class="align-middle m-2"
-        alt="logo"
-      />
-    </a>
-
-    <a href="/" class="logolight">
-      <img
-        src="./assets/images/logos/light-logo.svg"
-        class="align-middle m-2"
-        alt="logo"
-      />
+    <a href="/dashboard" class="flex items-center gap-2 px-3 py-3 no-underline">
+      <span class="iconify text-primary text-3xl" data-icon="solar:map-point-bold-duotone"></span>
+      <span class="text-lg font-bold leading-tight">
+        <span class="text-primary">Geo</span><span>Territorial</span>
+      </span>
     </a>
   `,
 })

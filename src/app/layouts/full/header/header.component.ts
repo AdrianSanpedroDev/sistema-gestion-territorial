@@ -110,6 +110,15 @@ export class HeaderComponent {
     });
   }
 
+  getRoleLabel(role: string | undefined): string {
+    const labels: Record<string, string> = {
+      admin: 'Administrador',
+      funcionario: 'Funcionario',
+      ciudadano: 'Ciudadano',
+    };
+    return role ? (labels[role] ?? role) : '';
+  }
+
   ngOnDestroy(): void {
     this.userSubscription?.unsubscribe();
   }

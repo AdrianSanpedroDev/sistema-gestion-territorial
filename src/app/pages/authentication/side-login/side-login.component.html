@@ -1,23 +1,33 @@
-<div class="flex h-screen w-full items-center justify-center overflow-hidden p-2">
-  <mat-card class="cardWithShadow overflow-hidden auth-card mx-auto mb-0">
-    <div class="grid grid-cols-12 gap-6">
+<div class="flex h-screen w-full items-center justify-center overflow-hidden p-4 bg-gray-50">
+  <mat-card class="cardWithShadow overflow-hidden mx-auto mb-0 w-full max-w-4xl">
+    <div class="grid grid-cols-12">
 
-      <div class="lg:col-span-6 col-span-12 flex items-stretch">
-        <div class="w-full p-10 flex flex-col justify-center gap-6">
+      <!-- Panel izquierdo: formulario -->
+      <div class="col-span-12 lg:col-span-5 flex items-center p-8 lg:p-12">
+        <div class="w-full flex flex-col gap-8">
 
-          <div class="text-center">
-            <img src="/assets/images/logos/dark-logo.svg" alt="logo" class="mx-auto mb-4 h-12" />
-            <h2 class="text-2xl font-bold">Sistema de Gestión Territorial</h2>
-            <p class="text-gray-500 mt-2">Inicia sesión para continuar</p>
+          <!-- Branding -->
+          <div class="flex items-center gap-3">
+            <span class="iconify text-primary text-4xl" data-icon="solar:map-point-bold-duotone"></span>
+            <span class="text-2xl font-bold">
+              <span class="text-primary">Geo</span><span>Territorial</span>
+            </span>
           </div>
 
-          <div class="flex flex-col gap-4">
+          <!-- Bienvenida -->
+          <div>
+            <h2 class="text-2xl font-bold">Bienvenido</h2>
+            <p class="text-gray-500 mt-1">Inicia sesión para acceder al sistema</p>
+          </div>
+
+          <!-- Botones OAuth -->
+          <div class="flex flex-col gap-3">
             <button
               mat-stroked-button
-              class="w-full py-2"
+              class="w-full py-3"
               [disabled]="loading"
               (click)="loginWith('google')">
-              <div class="flex items-center gap-3 px-2">
+              <div class="flex items-center justify-center gap-3">
                 <img src="/assets/images/svgs/google-icon.svg" alt="Google" class="w-5 h-5" />
                 <span>Continuar con Google</span>
               </div>
@@ -25,10 +35,10 @@
 
             <button
               mat-stroked-button
-              class="w-full py-2"
+              class="w-full py-3"
               [disabled]="loading"
               (click)="loginWith('github')">
-              <div class="flex items-center gap-3 px-2">
+              <div class="flex items-center justify-center gap-3">
                 <img src="/assets/images/svgs/github-icon.svg" alt="GitHub" class="w-5 h-5" />
                 <span>Continuar con GitHub</span>
               </div>
@@ -36,16 +46,35 @@
           </div>
 
           @if (loading) {
-            <p class="text-center text-gray-400 text-sm">Iniciando sesión...</p>
+            <div class="flex items-center justify-center gap-2 text-gray-400 text-sm">
+              <mat-spinner diameter="18"></mat-spinner>
+              <span>Iniciando sesión...</span>
+            </div>
           }
 
         </div>
       </div>
 
-      <div class="lg:col-span-6 col-span-12 relative hidden lg:flex justify-center items-stretch bg-light p-5">
-        <div class="flex items-center justify-center w-full">
-          <img src="/assets/images/backgrounds/login-bg.svg" alt="login" class="img-fluid object-cover" />
+      <!-- Panel derecho: visual de marca -->
+      <div class="col-span-12 lg:col-span-7 hidden lg:flex items-center justify-center p-12 relative overflow-hidden bg-gradient-to-br from-blue-600 to-blue-900">
+
+        <div class="absolute top-[-80px] right-[-80px] w-72 h-72 rounded-full bg-white/5"></div>
+        <div class="absolute bottom-[-60px] left-[-60px] w-56 h-56 rounded-full bg-white/5"></div>
+        <div class="absolute top-1/2 left-[-30px] w-32 h-32 rounded-full bg-white/5"></div>
+
+        <div class="relative z-10 text-white text-center flex flex-col items-center gap-6">
+          <span class="iconify text-9xl text-white/90" data-icon="solar:map-point-bold-duotone"></span>
+          <div>
+            <h1 class="text-4xl font-bold tracking-tight">
+              <span class="text-blue-300">Geo</span>Territorial
+            </h1>
+            <p class="text-blue-200 mt-2 text-base">Sistema de Gestión Territorial</p>
+          </div>
+          <p class="text-blue-300 text-sm max-w-xs leading-relaxed">
+            Gestiona ciudadanos, anotaciones y demarcaciones territoriales en un solo lugar.
+          </p>
         </div>
+
       </div>
 
     </div>
