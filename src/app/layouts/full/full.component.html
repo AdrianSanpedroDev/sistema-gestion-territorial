@@ -10,7 +10,7 @@
         <app-sidebar (toggleMobileNav)="sidenav.toggle()" [showToggle]="isOver"></app-sidebar>
         <ng-scrollbar class="relative" style="height: 100%">
           <mat-nav-list class="sidebar-list">
-            @for(item of navItems; track item) {
+            @for(item of filteredNavItems; track item) {
             <app-nav-item [item]="item" (notify)="sidenav.toggle()" class="top-parent">
             </app-nav-item>
             }

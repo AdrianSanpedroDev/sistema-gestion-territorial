@@ -16,6 +16,8 @@ import { HeaderComponent } from './header/header.component';
 import { SidebarComponent } from './sidebar/sidebar.component';
 import { AppNavItemComponent } from './sidebar/nav-item/nav-item.component';
 import { navItems } from './sidebar/sidebar-data';
+import { NavItem } from './sidebar/nav-item/nav-item';
+import { SecurityService } from '../../services/security.service';
 
 const MOBILE_VIEW = 'screen and (max-width: 768px)';
 const TABLET_VIEW = 'screen and (min-width: 769px) and (max-width: 1024px)';
@@ -54,7 +56,7 @@ interface quicklinks {
   encapsulation: ViewEncapsulation.None
 })
 export class FullComponent implements OnInit {
-  navItems = navItems;
+  filteredNavItems: NavItem[] = [];
 
 
 
@@ -186,7 +188,9 @@ export class FullComponent implements OnInit {
     private mediaMatcher: MediaMatcher,
     private router: Router,
     private breakpointObserver: BreakpointObserver,
-    private navService: NavService, private cdr: ChangeDetectorRef
+    private navService: NavService,
+    private cdr: ChangeDetectorRef,
+    private securityService: SecurityService,
   ) {
     this.htmlElement = document.querySelector('html')!;
     this.layoutChangesSubscription = this.breakpointObserver
@@ -221,7 +225,13 @@ export class FullComponent implements OnInit {
     this.cdr.detectChanges(); // Ensures Angular updates the view
   }
 
-  ngOnInit(): void { }
+  ngOnInit(): void {
+    this.securityService.getCurrentUser().subscribe(user => {
+      this.filteredNavItems = navItems.filter(item =>
+        !item.roles || (!!user && item.roles.includes(user.role))
+      );
+    });
+  }
 
   ngOnDestroy() {
     this.layoutChangesSubscription.unsubscribe();

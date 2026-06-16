@@ -1,24 +1,55 @@
 <div class="p-6 flex flex-col gap-6">
 
-  <div>
-    <h2 class="text-2xl font-semibold">Bienvenido</h2>
-    <p class="text-gray-500 mt-1">Sistema de Gestión Territorial — selecciona un módulo para comenzar.</p>
-  </div>
+  @if (user$ | async; as user) {
+    <div>
+      <h2 class="text-2xl font-semibold">Bienvenido, {{ user.name }}</h2>
+      <p class="text-gray-500 mt-1">
+        GeoTerritorial — plataforma de gestión y análisis del territorio urbano.
+      </p>
+    </div>
+  }
 
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-    @for (module of modules; track module.route) {
-      <mat-card
-        class="cardWithShadow cursor-pointer hover:scale-[1.02] transition-transform"
-        (click)="navigateTo(module.route)">
-        <mat-card-content class="flex items-center gap-4 py-4!">
-          <span class="iconify text-4xl text-primary" [attr.data-icon]="module.icon"></span>
-          <div>
-            <p class="font-semibold text-base">{{ module.title }}</p>
-            <p class="text-gray-500 text-sm">{{ module.description }}</p>
-          </div>
-        </mat-card-content>
-      </mat-card>
-    }
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+    <mat-card class="cardWithShadow">
+      <mat-card-content class="flex flex-col gap-3 py-4!">
+        <span class="iconify text-4xl text-primary" data-icon="solar:map-point-wave-line-duotone"></span>
+        <div>
+          <p class="font-semibold text-base">Gestión territorial</p>
+          <p class="text-gray-500 text-sm mt-1">
+            Registra y organiza anotaciones georreferenciadas sobre el territorio.
+            Administra comunas, barrios, ciudadanos, entidades y categorías desde un solo lugar.
+          </p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="cardWithShadow">
+      <mat-card-content class="flex flex-col gap-3 py-4!">
+        <span class="iconify text-4xl text-primary" data-icon="solar:routing-line-duotone"></span>
+        <div>
+          <p class="font-semibold text-base">Seguimiento en tiempo real</p>
+          <p class="text-gray-500 text-sm mt-1">
+            Monitorea la ubicación de los funcionarios de campo en tiempo real.
+            Delimita zonas de trabajo y visualiza coberturas sobre el mapa.
+          </p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="cardWithShadow">
+      <mat-card-content class="flex flex-col gap-3 py-4!">
+        <span class="iconify text-4xl text-primary" data-icon="solar:chart-2-line-duotone"></span>
+        <div>
+          <p class="font-semibold text-base">Análisis inteligente</p>
+          <p class="text-gray-500 text-sm mt-1">
+            Genera reportes en lenguaje natural con inteligencia artificial.
+            Obtén gráficas de distribución, tendencias y comparaciones al instante.
+          </p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
   </div>
 
 </div>

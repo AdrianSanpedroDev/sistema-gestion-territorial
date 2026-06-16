@@ -1,7 +1,7 @@
 # Estado del Proyecto — Sistema de Gestión Territorial
 
 > Documento de seguimiento del equipo frontend. Se actualiza a medida que se completan casos de uso.
-> Última actualización: 2026-06-15 — CU-15 completado (Adrián)
+> Última actualización: 2026-06-16 — RBAC, dashboard, auto-fill ciudadano (Adrián)
 
 ---
 
@@ -87,13 +87,13 @@
 - Ruta `/neighborhoods` registrada y entrada añadida al sidebar
 - **Pendiente:** mismo problema con mocks de filtros; relación con Comunas depende de que CU-05 tenga datos reales
 
-### ✅ CU-07 — Login OAuth
-- Pantalla de login con botones Google y GitHub
-- `SecurityService` conectado a Firebase Auth
+### ✅ CU-07 — Login OAuth + Email/Contraseña
+- Pantalla de login con botones Google, GitHub y formulario email/contraseña
+- `SecurityService` conectado a Firebase Auth: `loginWithGoogle()`, `loginWithGitHub()`, `loginWithEmail(email, password)`
 - Roles almacenados en Firestore (primer login crea usuario con rol `ciudadano`)
 - Guards `AuthenticatedGuard` y `NoAuthenticatedGuard` actualizados
-- **Pendiente:** login con Facebook (requiere app aprobada en Meta Developer Console)
-- **Pendiente:** login con correo y contraseña (requiere habilitar el proveedor Email/Password en Firebase Auth)
+- Diseño de login con branding GeoTerritorial (panel izquierdo con formulario, panel derecho con degradado azul)
+- Usuario admin: `admin@gmail.com` / `admin123` (creado manualmente en Firebase Auth + Firestore con `role: "admin"`)
 
 ### ✅ CU-08 — Logout
 - Botón "Logout" en el menú desplegable del header
@@ -120,7 +120,7 @@
 - Escucha evento de posición de funcionarios; muestra markers actualizados en tiempo real sobre el mapa
 - Funcionarios con `gps_active = true` emiten su posición; el mapa la refleja sin recargar la página
 
-### ✅ CU-12 — Crear/Editar anotación _(Adrián, 2026-06-15)_
+### ✅ CU-12 — Crear/Editar anotación _(Adrián, 2026-06-16)_
 - Modelo `Annotation` + interfaces de sub-recursos (`AnnotationCategory`, `Evidence`, `InterestedParty`) y DTOs en `src/app/models/annotation.ts`
 - `AnnotationService` extiende `CrudService<Annotation>`: métodos `createAnnotation`, `updateAnnotation`, `searchByFilter`; sub-recursos: `uploadEvidences` (FormData), `getEvidences`, `deleteEvidence`, `addCategory`, `removeCategory`, `getAnnotationCategories`, `addInterestedParty`, `removeInterestedParty`, `getInterestedParties`
 - Lista (`AnnotationComponent`): tabla paginada, búsqueda; ciudadano y barrio resueltos localmente con `forkJoin` + `CitizenService.getAll()` + `NeighborhoodService.getAll()` (el endpoint de lista no devuelve los nombres enriquecidos)
@@ -132,6 +132,7 @@
 - Evidencias: upload múltiple vía FormData (máx. 5 fotos); visualización y eliminación en modo editar
 - `MapPickerComponent` reutilizado (`app-map-picker`): centro por defecto en Manizales (`5.0703, -75.5138`); polígono del barrio detectado se muestra al hacer clic
 - Rutas: `/annotations` (lista) · `/annotations/new` · `/annotations/:id/edit` — registradas con lazy loading
+- **Auto-fill ciudadano:** `forkJoin(citizenService.getAll(), securityService.me())` → busca coincidencia por email; si hay match muestra nombre readonly; si no (admin sin registro), muestra selector como fallback
 
 ### ✅ CU-13 — Calificar anotación _(Adrián, 2026-06-15)_
 - Modelo `Vote` + DTOs `VoteRequestDto` (POST) y `VoteUpdateDto` (PUT) en `src/app/models/vote.ts`
@@ -191,8 +192,19 @@
 
 ---
 
+## Extras implementados (fuera del enunciado de CUs)
+
+| Pieza | Descripción |
+|---|---|
+| **RBAC — RoleGuard** | Guard funcional (`CanActivateFn`) que lee `route.data['roles']` y redirige a `/dashboard` si el rol no está permitido. Rutas de admin y admin+funcionario protegidas. |
+| **Sidebar filtrado por rol** | `FullComponent` filtra `navItems` en `ngOnInit` según el rol del usuario autenticado; los ítems sin `roles` son visibles para todos. |
+| **Dashboard descriptivo** | `StarterComponent` reemplazado por bienvenida con nombre del usuario (via `SecurityService.me()`) y 3 tarjetas informativas sobre las capacidades del sistema. |
+| **Branding GeoTerritorial** | Sidebar con logo + tipografía `Geo`/`Territorial`; login con panel degradado azul; header muestra nombre + etiqueta de rol. |
+
+---
+
 ## Notas del equipo
 
 - El backend no tiene autenticación implementada — todos los endpoints son públicos. La auth es responsabilidad exclusiva del frontend (Firebase).
-- Los roles se asignan manualmente desde la consola de Firebase Firestore (`users/{uid}.role`).
+- Los roles se asignan desde la consola de Firebase Firestore (`users/{uid}.role`). El admin se creó manualmente; nuevos usuarios inician con `ciudadano`.
 - Microsoft OAuth no disponible por restricciones de Azure en cuentas personales gratuitas.

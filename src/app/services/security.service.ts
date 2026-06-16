@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Auth, signInWithPopup, signOut, GoogleAuthProvider, GithubAuthProvider, onAuthStateChanged, User as FirebaseUser } from '@angular/fire/auth';
+import { Auth, signInWithPopup, signInWithEmailAndPassword, signOut, GoogleAuthProvider, GithubAuthProvider, onAuthStateChanged, User as FirebaseUser } from '@angular/fire/auth';
 import { Firestore, doc, getDoc, setDoc, updateDoc } from '@angular/fire/firestore';
 import { BehaviorSubject, Observable, from, throwError, of } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
@@ -45,6 +45,13 @@ export class SecurityService {
     const provider = new GithubAuthProvider();
     return from(
       signInWithPopup(this.auth, provider)
+        .then(result => this.getOrCreateUser(result.user))
+    );
+  }
+
+  loginWithEmail(email: string, password: string): Observable<User> {
+    return from(
+      signInWithEmailAndPassword(this.auth, email, password)
         .then(result => this.getOrCreateUser(result.user))
     );
   }

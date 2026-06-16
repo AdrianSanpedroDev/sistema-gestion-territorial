@@ -5,6 +5,7 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import Swal from 'sweetalert2';
 
 import { forkJoin, of } from 'rxjs';
+import { take } from 'rxjs/operators';
 
 import { AnnotationService } from '../../../services/annotation.service';
 import { CategoryService } from '../../../services/category.service';
@@ -12,6 +13,7 @@ import { CitizenService } from '../../../services/citizen.service';
 import { EntityService } from '../../../services/entity.service';
 import { NeighborhoodService } from '../../../services/neighborhood.service';
 import { PointService } from '../../../services/point.service';
+import { SecurityService } from '../../../services/security.service';
 
 import { Annotation, AnnotationCategory, AnnotationRequestDto, Evidence, InterestedParty } from '../../../models/annotation';
 import { Category } from '../../../models/category';
@@ -37,11 +39,15 @@ export class AnnotationFormComponent implements OnInit {
   private citizenService      = inject(CitizenService);
   private neighborhoodService = inject(NeighborhoodService);
   private pointService        = inject(PointService);
-  private categoryService = inject(CategoryService);
-  private entityService = inject(EntityService);
+  private categoryService     = inject(CategoryService);
+  private entityService       = inject(EntityService);
+  private securityService     = inject(SecurityService);
 
   isEditMode     = false;
   annotationId?: number;
+
+  citizenAutoFilled     = false;
+  autoFilledCitizenName = '';
 
   citizens:      Citizen[]      = [];
   neighborhoods: Neighborhood[] = [];
@@ -86,7 +92,7 @@ export class AnnotationFormComponent implements OnInit {
       this.loadAnnotation();
     }
 
-    this.loadCitizens();
+    this.loadAndAutoFillCitizen();
     this.loadNeighborhoods();
     this.loadCategories();
     this.loadEntities();
@@ -129,9 +135,20 @@ export class AnnotationFormComponent implements OnInit {
     });
   }
 
-  private loadCitizens(): void {
-    this.citizenService.getAll().subscribe({
-      next: (data) => (this.citizens = data),
+  private loadAndAutoFillCitizen(): void {
+    forkJoin({
+      citizens: this.citizenService.getAll(),
+      user: this.securityService.me().pipe(take(1)),
+    }).subscribe({
+      next: ({ citizens, user }) => {
+        this.citizens = citizens;
+        const match = citizens.find(c => c.email === user.email);
+        if (match) {
+          this.form.patchValue({ id_citizen: match.id_citizen });
+          this.autoFilledCitizenName = match.name;
+          this.citizenAutoFilled = true;
+        }
+      },
       error: () => {},
     });
   }

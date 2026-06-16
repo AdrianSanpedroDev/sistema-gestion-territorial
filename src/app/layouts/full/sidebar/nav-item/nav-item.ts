@@ -1,3 +1,5 @@
+import { UserRole } from '../../../../models/user';
+
 export interface NavItem {
     displayName?: string;
     disabled?: boolean;
@@ -13,4 +15,5 @@ export interface NavItem {
     children?: NavItem[];
     ddType?: string;
     subItemIcon?: boolean;
+    roles?: UserRole[];
 }
