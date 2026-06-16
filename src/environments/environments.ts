@@ -1,6 +1,7 @@
 export const environment = {
     production: false,
     apiUrl: 'http://127.0.0.1:5000/api',
+    reportsUrl: 'http://127.0.0.1:5000/reports',
     socketUrl: 'http://127.0.0.1:5000',
     firebase: {
         apiKey: 'AIzaSyD025IWLlPgaSUKcxE--UhefQ7jvcdTqFw',

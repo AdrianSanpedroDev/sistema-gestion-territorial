@@ -7,7 +7,7 @@ import { ReportRequest, ReportResponse } from '../models/report';
 @Injectable({ providedIn: 'root' })
 export class ReportsService {
 
-  private readonly apiUrl = `${environment.apiUrl}/reports`;
+  private readonly apiUrl = environment.reportsUrl;
 
   constructor(private http: HttpClient) {}
 

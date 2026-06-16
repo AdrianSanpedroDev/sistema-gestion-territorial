@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReportsService } from '../../services/reports.service';
 import { ReportResponse } from '../../models/report';
-import { BarChartComponent } from '../../components/ui/bar-chart/bar-chart.component';
+import { ChartRendererComponent } from '../../components/ui/chart-renderer/chart-renderer.component';
 import { ReportChatComponent } from '../../components/ui/report-chat/report-chat.component';
 import Swal from 'sweetalert2';
 
@@ -11,7 +11,7 @@ import Swal from 'sweetalert2';
   standalone: true,
   imports: [
     CommonModule,
-    BarChartComponent,
+    ChartRendererComponent,
     ReportChatComponent,
   ],
   templateUrl: './reports.component.html',
@@ -44,3 +44,4 @@ export class ReportsComponent {
     });
   }
 }
+

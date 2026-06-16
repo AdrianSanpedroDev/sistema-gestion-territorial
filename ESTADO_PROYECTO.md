@@ -1,7 +1,7 @@
 # Estado del Proyecto — Sistema de Gestión Territorial
 
 > Documento de seguimiento del equipo frontend. Se actualiza a medida que se completan casos de uso.
-> Última actualización: 2026-06-15 — CU-13 y CU-14 completados (Adrián)
+> Última actualización: 2026-06-15 — CU-15 completado (Adrián)
 
 ---
 
@@ -23,7 +23,7 @@
 | Anotaciones | CU-12 | Crear anotación | ✅ Completado | Adrián |
 | Anotaciones | CU-13 | Calificar anotación | ✅ Completado | Adrián |
 | Anotaciones | CU-14 | Visualizar por categoría | ✅ Completado | Adrián |
-| Reportes | CU-15 | Reportes inteligentes (chat) | ⬜ Pendiente | — |
+| Reportes | CU-15 | Reportes inteligentes (chat) | ✅ Completado | Adrián |
 
 **Leyenda:** ✅ Completado · 🔄 En progreso · ⬜ Pendiente · ❌ Bloqueado
 
@@ -150,6 +150,18 @@
 - Detalle al hacer clic en marcador: descripción, **categoría padre derivada del árbol** + subcategoría, evidencias, calificación promedio + distribución y fecha; mensajes **2a** (sin anotaciones) y **6a** (filtro sin resultados)
 - **Quirk del backend corregido** (centralizado en `AnnotationService.filterByAnnotation`): los endpoints sub-recurso (`evidences`, `annotation-categories`, `interested-parties`, `votes/search`) ignoran el filtro `?id_annotation` y devuelven todas las filas → se re-filtra en el cliente por `id_annotation`
 - **Limpieza**: `territorial-management` y su `MapService` se devolvieron a demarcación pura (se removieron los métodos de anotaciones que el commit anterior les había añadido)
+
+### ✅ CU-15 — Reportes inteligentes _(Adrián, 2026-06-15)_
+- Modelos `ReportRequest`, `ChartSeries`, `ReportResponse` e interfaz `ChartRendererOptions` en `src/app/models/report.ts`
+- `ChartRendererOptions` importa tipos de `ng-apexcharts` (ApexAxisChartSeries, ApexNonAxisChartSeries, ApexChart, ApexXAxis, ApexPlotOptions, ApexDataLabels, ApexTooltip, ApexGrid, ApexLegend) — campos opcionales con `?` expresan que no todos los tipos de gráfica usan todos los campos
+- `ReportsService` en `src/app/services/reports.service.ts`: `generateReport(query)` → `POST /reports` con body `{ query }`
+- `ReportChatComponent` (`app-report-chat`): textarea + botón "Generar Reporte"; emite `querySubmit` con el texto al padre; input `[loading]` deshabilita el botón mientras se procesa
+- `ChartRendererComponent` (`app-chart-renderer`): recibe `@Input() reportData: ReportResponse | null`; usa `ngOnChanges` (no `ngOnInit`) porque el input cambia múltiples veces; ramifica por `reportData.type` en métodos privados `buildBar()`, `buildLine()`, `buildPie()`; detecta arrays vacíos y muestra "Sin datos"; bandera `isEmpty` separada de `chartOptions` porque son estados semánticamente distintos
+- Tipos soportados: `'bar'` → ApexChart horizontal con `ApexAxisChartSeries`; `'line'` / `'series'` (alias del backend) → ApexChart de línea; `'pie'` → ApexChart con `ApexNonAxisChartSeries` (number[]) y `labels`
+- Template usa `$any()` para campos opcionales del `Partial<ChartRendererOptions>` que `apx-chart` no acepta como `undefined` bajo strict templates
+- `ReportsComponent` (página `/reports`): coordina `ReportChatComponent` + `ChartRendererComponent`; errores manejados con SweetAlert2 mostrando `err.error.message`
+- **Quirk del backend:** el endpoint real es `POST /reports` (sin prefijo `/api` — el blueprint no tiene `url_prefix`); corregido con `reportsUrl: 'http://127.0.0.1:5000/reports'` en `environment.ts` (separado de `apiUrl`)
+- El tipo de gráfica lo decide Gemini en el backend según semántica de la pregunta: "porcentaje/proporción" → pie, "cuántos/compara" → bar, "evolución/tendencia" → line
 
 ---
 
