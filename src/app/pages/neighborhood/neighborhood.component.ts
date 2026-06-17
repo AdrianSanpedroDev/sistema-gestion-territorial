@@ -5,7 +5,9 @@ import { FilterBarComponent } from '../../components/ui/filter-bar/filter-bar.co
 import { DynamicTableComponent } from '../../components/ui/table/dynamic-table/dynamic-table.component';
 import { GenericModalComponent } from '../../components/ui/generic-modal/generic-modal.component';
 import { NeighborhoodService } from '../../services/neighborhood.service';
+import { CommuneService } from '../../services/commune.service';
 import { Neighborhood, NeighborhoodRequestDto } from '../../models/neighborhood';
+import { Commune } from '../../models/commune';
 import { ColumnDef } from '../../models/component-dynamic-table/column-def';
 import { ActionButton } from '../../models/component-dynamic-table/action-button';
 import { TablePageEvent } from '../../models/component-dynamic-table/table-page-event';
@@ -19,13 +21,16 @@ import Swal from 'sweetalert2';
 })
 export class NeighborhoodsComponent implements OnInit {
   private neighborhoodService = inject(NeighborhoodService);
+  private communeService = inject(CommuneService);
   private fb = inject(FormBuilder);
 
-  communes = [{ id: 1, name: 'Comuna 8 - Bosques del Norte' }, { id: 2, name: 'Comuna 1' }];
+  // Catálogo Real
+  communes: Commune[] = [];
   selectedFilterCommuneId: number | null = null;
   searchTerm: string = '';
 
-  neighborhoods: Neighborhood[] = [];
+  // Interceptamos para colocar nombre dinámico a la comuna
+  neighborhoods: (Neighborhood & { communeName?: string })[] = [];
   loading = false;
   page = 1;
   pageSize = 5;
@@ -33,9 +38,7 @@ export class NeighborhoodsComponent implements OnInit {
 
   columns: ColumnDef[] = [
     { key: 'name', header: 'Barrio' },
-    { key: 'id_commune', header: 'Comuna' },
-    // { key: 'points_count', header: 'Puntos' }, // TODO: Agregar cuando backend mande el dato
-    // { key: 'annotations_count', header: 'Anotaciones' }, // TODO: Agregar cuando backend mande el dato
+    { key: 'communeName', header: 'Comuna' }, // <- Cambiado a nuestra propiedad mapeada
     { key: 'status', header: 'Estado' }
   ];
 
@@ -51,7 +54,7 @@ export class NeighborhoodsComponent implements OnInit {
 
   ngOnInit() {
     this.initForm();
-    this.loadData();
+    this.loadCatalogs();
   }
 
   initForm() {
@@ -62,18 +65,41 @@ export class NeighborhoodsComponent implements OnInit {
     });
   }
 
+  loadCatalogs() {
+    this.loading = true;
+    this.communeService.getAll().subscribe({
+      next: (res) => {
+        this.communes = (res as any).items || res || [];
+        this.loadData();
+      },
+      error: () => {
+        this.loading = false;
+        Swal.fire('Error', 'No se pudieron cargar las comunas', 'error');
+      }
+    });
+  }
+
   loadData() {
     this.loading = true;
     
-    const request$ = this.selectedFilterCommuneId 
-      ? this.neighborhoodService.searchByFilter(this.selectedFilterCommuneId, this.page, this.pageSize)
+    const request$ = (this.selectedFilterCommuneId || this.searchTerm)
+      ? this.neighborhoodService.searchByFilter(this.selectedFilterCommuneId, this.searchTerm, this.page, this.pageSize)
       : this.neighborhoodService.getPaged(this.page, this.pageSize);
 
     request$.subscribe({
       next: (res) => {
         const response = res as any;
-        // Misma corrección robusta de arrays
-        this.neighborhoods = response.items || response.data || response.content || (Array.isArray(response) ? response : []);
+        const rawNeighborhoods: Neighborhood[] = response.items || response.data || response.content || (Array.isArray(response) ? response : []);
+        
+        // Mapeamos el nombre real de la comuna
+        this.neighborhoods = rawNeighborhoods.map(n => {
+          const comm = this.communes.find(c => c.id_commune === n.id_commune);
+          return {
+            ...n,
+            communeName: comm ? comm.name : 'Desconocida'
+          };
+        });
+
         this.totalItems = response.totalItems || response.total || response.totalElements || this.neighborhoods.length;
         this.loading = false;
       },
@@ -86,7 +112,8 @@ export class NeighborhoodsComponent implements OnInit {
 
   onSearch(event: any) {
     this.searchTerm = event.target.value;
-    // TODO: Conectar searchTerm a endpoint si es necesario
+    this.page = 1;
+    this.loadData();
   }
 
   onFilterChange(event: any) {
@@ -101,7 +128,7 @@ export class NeighborhoodsComponent implements OnInit {
     this.loadData();
   }
 
-  handleAction(event: { actionId: string; row: Neighborhood }) {
+  handleAction(event: { actionId: string; row: Neighborhood & { communeName?: string } }) {
     if (event.actionId === 'edit') {
       this.openModal('edit', event.row);
     } else if (event.actionId === 'delete') {
@@ -121,7 +148,7 @@ export class NeighborhoodsComponent implements OnInit {
       });
     } else {
       this.currentNeighborhoodId = null;
-      this.form.reset({ status: 'active' });
+      this.form.reset({ status: 'active', id_commune: '' });
     }
   }
 

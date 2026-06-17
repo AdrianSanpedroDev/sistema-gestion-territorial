@@ -35,11 +35,13 @@ export class NeighborhoodService extends CrudService<Neighborhood> {
    * ENDPOINT ESPECÍFICO: Buscar barrios filtrados por Comuna de forma paginada.
    * Mapea el flujo de Postman: {{baseUrl}}/api/neighborhoods/search?id_commune=1&page=1&pageSize=5
    */
-  searchByFilter(idCommune: number, page: number, pageSize: number): Observable<PagedResponse<Neighborhood>> {
-    const params = new HttpParams()
-      .set('id_commune', String(idCommune))
+  searchByFilter(idCommune: number | null, searchTerm: string, page: number, pageSize: number): Observable<PagedResponse<Neighborhood>> {
+    let params = new HttpParams()
       .set('page', String(page))
       .set('pageSize', String(pageSize));
+
+    if (idCommune) params = params.set('id_commune', String(idCommune));
+    if (searchTerm) params = params.set('name', searchTerm); // Agregamos el término de texto
 
     return this.httpClient.get<PagedResponse<Neighborhood>>(`${this.apiBaseUrl}/${this.resource}/search`, { params });
   }

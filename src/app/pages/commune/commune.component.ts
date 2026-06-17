@@ -5,10 +5,15 @@ import { FilterBarComponent } from '../../components/ui/filter-bar/filter-bar.co
 import { DynamicTableComponent } from '../../components/ui/table/dynamic-table/dynamic-table.component';
 import { GenericModalComponent } from '../../components/ui/generic-modal/generic-modal.component';
 import { CommuneService } from '../../services/commune.service';
-import { Commune, CommuneRequestDto } from '../../models/commune';
+import { CityService } from '../../services/city.service';
+import { DepartmentService } from '../../services/department.service';
+import { Commune } from '../../models/commune';
+import { City } from '../../models/city';
+import { Department } from '../../models/department';
 import { ColumnDef } from '../../models/component-dynamic-table/column-def';
 import { ActionButton } from '../../models/component-dynamic-table/action-button';
 import { TablePageEvent } from '../../models/component-dynamic-table/table-page-event';
+import { forkJoin } from 'rxjs';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -19,22 +24,22 @@ import Swal from 'sweetalert2';
 })
 export class CommunesComponent implements OnInit {
   private communeService = inject(CommuneService);
+  private cityService = inject(CityService);
+  private departmentService = inject(DepartmentService);
   private fb = inject(FormBuilder);
 
-  // Mocks para los filtros (Asumiendo que luego los llenarás con los servicios reales)
-  departments = [{ id: 1, name: 'Caldas' }, { id: 2, name: 'Cundinamarca' }];
-  cities = [
-    { id: 1, id_department: 1, name: 'Manizales' }, 
-    { id: 251, id_department: 2, name: 'Bogotá' }
-  ];
-  
+  // Catálogos reales
+  departments: Department[] = [];
+  allCities: City[] = [];
+  filteredCities: City[] = []; // Ciudades filtradas por el departamento seleccionado
+
   // Estado de los filtros
   selectedDepartmentId: number | null = null;
   selectedFilterCityId: number | null = null;
   searchTerm: string = '';
 
-  // Estado de la tabla
-  communes: Commune[] = [];
+  // Estado de la tabla (usamos un tipo extendido para incluir los nombres dinámicos sin dañar la interface)
+  communes: (Commune & { cityName?: string; departmentName?: string })[] = [];
   loading = false;
   page = 1;
   pageSize = 5;
@@ -42,9 +47,8 @@ export class CommunesComponent implements OnInit {
 
   columns: ColumnDef[] = [
     { key: 'name', header: 'Comuna' },
-    { key: 'id_city', header: 'Ciudad' }, // Reemplazar con 'city.name' si el backend manda el objeto anidado
-    { key: 'id_department', header: 'Departamento' }, // Mock/Reemplazar luego
-    // { key: 'neighborhoods_count', header: 'Barrios Asociados' }, // TODO: Descomentar cuando el backend provea este dato
+    { key: 'cityName', header: 'Ciudad' }, 
+    { key: 'departmentName', header: 'Departamento' }, 
     { key: 'status', header: 'Estado' }
   ];
 
@@ -60,50 +64,102 @@ export class CommunesComponent implements OnInit {
 
   ngOnInit() {
     this.initForm();
-    this.loadData();
+    this.loadCatalogs(); // Primero cargamos catálogos, luego los datos
   }
 
   initForm() {
     this.form = this.fb.group({
-      id_department: [''], // Solo para UI, no suele ir en el DTO final si la ciudad ya define el depto
+      id_department: [''], 
       id_city: ['', Validators.required],
       name: ['', Validators.required],
       status: ['active', Validators.required]
+    });
+
+    // Detectar cambios en el departamento dentro del modal para filtrar las ciudades
+    this.form.get('id_department')?.valueChanges.subscribe(deptId => {
+      if (deptId) {
+        this.filteredCities = this.allCities.filter(c => c.id_department === Number(deptId));
+      } else {
+        this.filteredCities = [...this.allCities];
+      }
+      // Opcional: limpiar la ciudad si el depto cambia
+      if (this.isModalOpen && this.form.get('id_city')?.value) {
+        this.form.patchValue({ id_city: '' });
+      }
+    });
+  }
+
+  loadCatalogs() {
+    this.loading = true;
+    // forkJoin permite ejecutar múltiples peticiones en paralelo y esperar a que ambas terminen
+    forkJoin({
+      deps: this.departmentService.getAll(),
+      cities: this.cityService.getAll()
+    }).subscribe({
+      next: (res) => {
+        // Extraer arrays por si vienen envueltos en un response DTO
+        this.departments = (res.deps as any).items || res.deps || [];
+        this.allCities = (res.cities as any).items || res.cities || [];
+        this.filteredCities = [...this.allCities];
+        this.loadData(); // Ahora sí, cargamos las comunas
+      },
+      error: () => {
+        this.loading = false;
+        Swal.fire('Error', 'No se pudieron cargar los catálogos', 'error');
+      }
     });
   }
 
   loadData() {
     this.loading = true;
     
-    // Si tu servicio soporta búsqueda por texto, agrégalo a los parámetros del método.
-    // Por ahora usamos la lógica base que enviamos en los servicios.
-    const request$ = this.selectedFilterCityId 
-      ? this.communeService.searchByFilter(this.selectedFilterCityId, this.page, this.pageSize)
+    // Si hay búsqueda por texto o filtro de ciudad, usamos el searchByFilter
+    const request$ = (this.selectedFilterCityId || this.searchTerm)
+      ? this.communeService.searchByFilter(this.selectedFilterCityId, this.searchTerm, this.page, this.pageSize)
       : this.communeService.getPaged(this.page, this.pageSize);
 
     request$.subscribe({
       next: (res) => {
         const response = res as any;
-        // Extracción robusta de datos: Cubre la mayoría de formas en que un backend devuelve info
-        this.communes = response.items || response.data || response.content || (Array.isArray(response) ? response : []);
+        const rawCommunes: Commune[] = response.items || response.data || response.content || (Array.isArray(response) ? response : []);
+        
+        // Mapeo MÁGICO: Cruzamos el id_city con nuestros catálogos en memoria
+        this.communes = rawCommunes.map(c => {
+          const city = this.allCities.find(x => x.id_city === c.id_city);
+          const dept = city ? this.departments.find(d => d.id_department === city.id_department) : null;
+          return {
+            ...c,
+            cityName: city ? city.name : 'Desconocida',
+            departmentName: dept ? dept.name : 'Desconocido'
+          };
+        });
+
         this.totalItems = response.totalItems || response.total || response.totalElements || this.communes.length;
         this.loading = false;
       },
       error: () => {
         this.loading = false;
-        this.communes = []; // Evita romper la vista en caso de error
+        this.communes = [];
       }
     });
   }
 
   onSearch(event: any) {
     this.searchTerm = event.target.value;
-    // TODO: Implementar lógica de búsqueda en backend si es requerida
+    this.page = 1;
+    this.loadData();
   }
 
   onDepartmentFilterChange(event: any) {
     this.selectedDepartmentId = event.target.value ? Number(event.target.value) : null;
-    this.selectedFilterCityId = null; // Reiniciar ciudad al cambiar depto
+    
+    if (this.selectedDepartmentId) {
+      this.filteredCities = this.allCities.filter(c => c.id_department === this.selectedDepartmentId);
+    } else {
+      this.filteredCities = [...this.allCities];
+    }
+    
+    this.selectedFilterCityId = null; 
     this.page = 1;
     this.loadData();
   }
@@ -120,7 +176,7 @@ export class CommunesComponent implements OnInit {
     this.loadData();
   }
 
-  handleAction(event: { actionId: string; row: Commune }) {
+  handleAction(event: { actionId: string; row: Commune & { departmentName?: string, cityName?: string } }) {
     if (event.actionId === 'edit') {
       this.openModal('edit', event.row);
     } else if (event.actionId === 'delete') {
@@ -130,18 +186,25 @@ export class CommunesComponent implements OnInit {
 
   openModal(mode: 'create' | 'edit', commune?: Commune) {
     this.modalMode = mode;
-    this.isModalOpen = true;
+    
     if (mode === 'edit' && commune) {
       this.currentCommuneId = commune.id_commune;
+      
+      // Auto-seleccionar departamento en el select basado en la ciudad
+      const city = this.allCities.find(c => c.id_city === commune.id_city);
+      
       this.form.patchValue({
+        id_department: city ? city.id_department : '',
         id_city: commune.id_city,
         name: commune.name,
         status: commune.status
       });
     } else {
       this.currentCommuneId = null;
-      this.form.reset({ status: 'active' });
+      this.form.reset({ status: 'active', id_department: '', id_city: '' });
+      this.filteredCities = [...this.allCities];
     }
+    this.isModalOpen = true;
   }
 
   closeModal() {
@@ -153,7 +216,6 @@ export class CommunesComponent implements OnInit {
     if (this.form.invalid) return;
     
     this.loading = true;
-    // Extraemos solo lo necesario para el backend
     const { id_department, ...dto } = this.form.value; 
 
     const request$ = this.modalMode === 'create'
@@ -164,7 +226,7 @@ export class CommunesComponent implements OnInit {
       next: () => {
         Swal.fire('Éxito', `Comuna ${this.modalMode === 'create' ? 'creada' : 'actualizada'} correctamente`, 'success');
         this.closeModal();
-        this.loadData();
+        this.loadCatalogs(); // Recargamos para reflejar cambios frescos
       },
       error: () => {
         Swal.fire('Error', 'Ocurrió un error al procesar la solicitud', 'error');

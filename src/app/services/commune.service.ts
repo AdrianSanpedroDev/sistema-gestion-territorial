@@ -35,11 +35,13 @@ export class CommuneService extends CrudService<Commune> {
    * ENDPOINT ESPECÍFICO: Buscar comunas filtradas por Ciudad de forma paginada.
    * Mapea el flujo de Postman: {{baseUrl}}/api/communes/search?id_city=1&page=1&pageSize=5
    */
-  searchByFilter(idCity: number, page: number, pageSize: number): Observable<PagedResponse<Commune>> {
-    const params = new HttpParams()
-      .set('id_city', String(idCity))
+  searchByFilter(idCity: number | null, searchTerm: string, page: number, pageSize: number): Observable<PagedResponse<Commune>> {
+    let params = new HttpParams()
       .set('page', String(page))
       .set('pageSize', String(pageSize));
+
+    if (idCity) params = params.set('id_city', String(idCity));
+    if (searchTerm) params = params.set('name', searchTerm); // Agregamos el término de texto
 
     return this.httpClient.get<PagedResponse<Commune>>(`${this.apiBaseUrl}/${this.resource}/search`, { params });
   }
