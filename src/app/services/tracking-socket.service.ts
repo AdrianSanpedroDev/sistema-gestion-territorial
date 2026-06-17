@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { Observable, Subject } from 'rxjs';
+import { environment } from '../../environments/environments';
 import { OfficialTrackingPayload } from '../models/tracking'; // Asegúrate de ajustar la ruta
 
 @Injectable({
@@ -9,8 +10,7 @@ import { OfficialTrackingPayload } from '../models/tracking'; // Asegúrate de a
 export class TrackingSocketService {
   private socket: Socket | undefined;
   
-  // TODO: Mover a tu archivo environment
-  private readonly socketUrl = 'http://localhost:6001'; 
+  private readonly socketUrl = environment.trackingUrl;
   
   // Subject para emitir los datos de tracking a los componentes suscritos
   private trackingUpdates$ = new Subject<OfficialTrackingPayload>();

@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { 
+import { environment } from '../../environments/environments';
+import {
   TrackingStartRequestDto, 
   TrackingStartResponseDto, 
   TrackingStopRequestDto, 
@@ -12,8 +13,7 @@ import {
   providedIn: 'root'
 })
 export class TrackingService {
-  // TODO: Mover esta URL a tus archivos environment (ej: environment.apiUrl)
-  private readonly apiUrl = 'http://localhost:6001/api/officials/tracking';
+  private readonly apiUrl = `${environment.trackingUrl}/api/officials/tracking`;
 
   constructor(private http: HttpClient) {}
 

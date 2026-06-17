@@ -3,6 +3,7 @@ export const environment = {
     apiUrl: 'http://127.0.0.1:5000/api',
     reportsUrl: 'http://127.0.0.1:5000/reports',
     socketUrl: 'http://127.0.0.1:5000',
+    trackingUrl: 'http://localhost:6001',
     firebase: {
         apiKey: 'AIzaSyD025IWLlPgaSUKcxE--UhefQ7jvcdTqFw',
         authDomain: 'gestion-territorial-cc4fe.firebaseapp.com',
